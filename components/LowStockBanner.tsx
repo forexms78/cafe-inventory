@@ -17,7 +17,7 @@ export default function LowStockBanner({ items }: Props) {
           재고 부족 알림 — 총 {lowItems.length}개 품목
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {dangerItems.map(item => (
           <span key={item.id} className="text-xs px-2.5 py-1 rounded-full font-medium bg-red-100 text-red-700 border border-red-200">
             🔴 {item.name} (재고 {item.stock})
