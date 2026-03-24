@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import StockLogModal, { appendLog } from '@/components/StockLogModal';
 import { Item, Category, CATEGORIES, CafeUser, getStockStatus } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -62,6 +63,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [showLogModal, setShowLogModal] = useState(false);
+  const titleClickCount = useRef(0);
+  const titleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items');
@@ -125,6 +129,19 @@ export default function Home() {
     setReorderMode(false);
   };
 
+  const handleTitleClick = () => {
+    titleClickCount.current += 1;
+    if (titleClickTimer.current) clearTimeout(titleClickTimer.current);
+    if (titleClickCount.current >= 5) {
+      titleClickCount.current = 0;
+      setShowLogModal(true);
+    } else {
+      titleClickTimer.current = setTimeout(() => {
+        titleClickCount.current = 0;
+      }, 2000);
+    }
+  };
+
   const searchResults = searchQuery.trim().length > 0
     ? items.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 8)
     : [];
@@ -172,6 +189,15 @@ export default function Home() {
       toast.error('저장 실패. 다시 시도해주세요.');
     } else {
       toast.success('저장됨');
+      const itemName = items.find(i => i.id === id)?.name ?? id;
+      appendLog({
+        timestamp: new Date().toISOString(),
+        itemName,
+        field,
+        oldValue: prev as number,
+        newValue: value,
+        user: user?.name ?? '비로그인',
+      });
     }
   };
 
@@ -223,7 +249,10 @@ export default function Home() {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>재고 관리</h1>
+          <h1 className="text-4xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>
+            재고 관
+            <span onClick={handleTitleClick} className="cursor-default select-none">리</span>
+          </h1>
           <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
         </div>
         <div className="flex items-center gap-2">
@@ -436,6 +465,7 @@ export default function Home() {
         onSuccess={u => { saveSession(u); setUser(u); setShowLogin(false); }}
         onClose={() => setShowLogin(false)} />
       <ChangePasswordModal open={showChangePw} onClose={() => setShowChangePw(false)} />
+      <StockLogModal open={showLogModal} onClose={() => setShowLogModal(false)} />
     </main>
   );
 }
