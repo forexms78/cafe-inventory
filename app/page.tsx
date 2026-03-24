@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 import { Item, Category, CATEGORIES, CafeUser, getStockStatus } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -58,6 +59,9 @@ export default function Home() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
   const [reorderItems, setReorderItems] = useState<Item[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items');
@@ -121,6 +125,31 @@ export default function Home() {
     setReorderMode(false);
   };
 
+  const searchResults = searchQuery.trim().length > 0
+    ? items.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 8)
+    : [];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchSelect = (item: Item) => {
+    setSearchQuery('');
+    setSearchOpen(false);
+    setActiveCategory(item.category);
+    setHighlightedId(item.id);
+    setTimeout(() => {
+      document.getElementById(`item-${item.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    setTimeout(() => setHighlightedId(null), 2500);
+  };
+
   const handleAlertClick = (item: Item) => {
     setActiveCategory(item.category);
     setHighlightedId(item.id);
@@ -131,12 +160,19 @@ export default function Home() {
   };
 
   const handleStockChange = async (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
-    await fetch('/api/items', {
+    const prev = items.find(i => i.id === id)?.[field] ?? 0;
+    setItems(current => current.map(i => i.id === id ? { ...i, [field]: value } : i));
+    const res = await fetch('/api/items', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, [field]: value }),
     });
+    if (!res.ok) {
+      setItems(current => current.map(i => i.id === id ? { ...i, [field]: prev } : i));
+      toast.error('저장 실패. 다시 시도해주세요.');
+    } else {
+      toast.success('저장됨');
+    }
   };
 
   const handleProductNameChange = async (id: string, name: string | null) => {
@@ -214,6 +250,32 @@ export default function Home() {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* 검색 */}
+      <div ref={searchRef} className="relative mb-4">
+        <input
+          type="text"
+          placeholder="품목 검색..."
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+          onFocus={() => setSearchOpen(true)}
+          className="w-full border border-pink-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-400 placeholder-pink-200"
+        />
+        {searchOpen && searchResults.length > 0 && (
+          <div className="absolute top-full mt-1 w-full bg-white border border-pink-100 rounded-xl shadow-lg z-50 overflow-hidden">
+            {searchResults.map(item => (
+              <button
+                key={item.id}
+                onClick={() => handleSearchSelect(item)}
+                className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-pink-50 transition-colors text-left"
+              >
+                <span className="font-medium text-gray-800">{item.name}</span>
+                <span className="text-xs text-pink-400 bg-pink-50 px-2 py-0.5 rounded-full">{item.category}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 카테고리 탭 */}

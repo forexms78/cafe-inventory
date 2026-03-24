@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Jua, Noto_Sans_KR } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const jua = Jua({
@@ -40,6 +41,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <Toaster position="bottom-center" richColors />
       </body>
     </html>
   );
