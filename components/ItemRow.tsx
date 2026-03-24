@@ -318,7 +318,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
       </td>
 
       {showExpiry && (
-        <td className="px-4 py-3 text-sm text-center text-gray-400 whitespace-nowrap">
+        <td className="px-4 py-3 text-sm text-center text-gray-400 whitespace-nowrap min-w-[90px]">
           {item.expiry_date ?? '-'}
         </td>
       )}

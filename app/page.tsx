@@ -227,7 +227,7 @@ export default function Home() {
                 <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">팬트리</th>
                 <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">사무실</th>
                 {showExpiry && (
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">유통기한</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide whitespace-nowrap">유통기한</th>
                 )}
                 {user && !reorderMode && <th className="px-4 py-3" />}
               </tr>
