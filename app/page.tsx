@@ -35,10 +35,7 @@ export default function Home() {
   const showOfficeStock = categoryItems.some(i => i.office_stock !== null && i.office_stock !== undefined);
   const showExpiry = ['오믈렛및마카롱', '도쿄롤', '케익'].includes(activeCategory);
 
-  const sortedItems = [...categoryItems].sort((a, b) => {
-    const order = { danger: 0, warning: 1, ok: 2 };
-    return order[getStockStatus(a)] - order[getStockStatus(b)];
-  });
+  const sortedItems = categoryItems;
 
   const handleStockChange = async (id: string, delta: number) => {
     const item = items.find(i => i.id === id);
@@ -182,7 +179,7 @@ export default function Home() {
               <div key={category} className="bg-white rounded-2xl border border-pink-100 shadow-sm overflow-hidden">
                 {/* 카테고리 헤더 */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-pink-50 bg-pink-50/50">
-                  <span className="font-semibold text-pink-700 text-sm" style={{ fontFamily: 'var(--font-jua)' }}>
+                  <span className="font-bold text-pink-700 text-base" style={{ fontFamily: 'var(--font-jua)' }}>
                     {category}
                   </span>
                   {loading ? (
