@@ -64,7 +64,8 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [showLogModal, setShowLogModal] = useState(false);
-  const titleLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const titleClickCount = useRef(0);
+  const titleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items');
@@ -128,16 +129,16 @@ export default function Home() {
     setReorderMode(false);
   };
 
-  const handleTitlePressStart = () => {
-    titleLongPressTimer.current = setTimeout(() => {
+  const handleTitleClick = () => {
+    titleClickCount.current += 1;
+    if (titleClickTimer.current) clearTimeout(titleClickTimer.current);
+    if (titleClickCount.current >= 3) {
+      titleClickCount.current = 0;
       setShowLogModal(true);
-    }, 3000);
-  };
-
-  const handleTitlePressEnd = () => {
-    if (titleLongPressTimer.current) {
-      clearTimeout(titleLongPressTimer.current);
-      titleLongPressTimer.current = null;
+    } else {
+      titleClickTimer.current = setTimeout(() => {
+        titleClickCount.current = 0;
+      }, 2000);
     }
   };
 
@@ -250,14 +251,7 @@ export default function Home() {
         <div>
           <h1 className="text-4xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>
             재고 관
-            <span
-              onMouseDown={handleTitlePressStart}
-              onMouseUp={handleTitlePressEnd}
-              onMouseLeave={handleTitlePressEnd}
-              onTouchStart={handleTitlePressStart}
-              onTouchEnd={handleTitlePressEnd}
-              className="cursor-default select-none"
-            >리</span>
+            <span onClick={handleTitleClick} className="cursor-default select-none">리</span>
           </h1>
           <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
         </div>
