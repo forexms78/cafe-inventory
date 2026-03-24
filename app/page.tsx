@@ -215,8 +215,9 @@ export default function Home() {
         {loading ? (
           <div className="py-16 text-center text-pink-300 text-sm">불러오는 중...</div>
         ) : (
+          <div className="overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <table className="w-full">
+          <table className="w-full min-w-[500px]">
             <thead className="bg-pink-50/70 border-b border-pink-100">
               <tr>
                 {reorderMode && <th className="w-8" />}
@@ -267,6 +268,7 @@ export default function Home() {
             </SortableContext>
           </table>
           </DndContext>
+          </div>
         )}
         {user && (
           <div className="p-4 border-t border-pink-50 flex gap-2">
@@ -296,7 +298,7 @@ export default function Home() {
         <h2 className="text-lg font-bold text-pink-700 mb-3" style={{ fontFamily: 'var(--font-jua)' }}>
           재고 부족 알림
         </h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {CATEGORIES.map(category => {
             const catItems = items.filter(i => i.category === category);
             const dangerItems = catItems.filter(i => getStockStatus(i) === 'danger');
