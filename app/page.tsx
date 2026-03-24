@@ -148,6 +148,15 @@ export default function Home() {
     });
   };
 
+  const handleExpiryChange = async (id: string, expiry: string | null) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, expiry_date: expiry } : i));
+    await fetch('/api/items', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, expiry_date: expiry }),
+    });
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('삭제하시겠습니까?')) return;
     await fetch('/api/items', {
@@ -247,6 +256,7 @@ export default function Home() {
                     showExpiry={showExpiry}
                     onStockChange={handleStockChange}
                     onProductNameChange={handleProductNameChange}
+                    onExpiryChange={handleExpiryChange}
                     onDelete={handleDelete}
                   />
                 ))
@@ -260,6 +270,7 @@ export default function Home() {
                     highlighted={highlightedId === item.id}
                     onStockChange={handleStockChange}
                     onProductNameChange={handleProductNameChange}
+                    onExpiryChange={handleExpiryChange}
                     onDelete={handleDelete}
                   />
                 ))

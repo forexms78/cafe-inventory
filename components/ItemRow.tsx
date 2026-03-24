@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHand
 import { Item, CafeUser, getStockStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import PriceCompareModal from '@/components/PriceCompareModal';
+import ExpiryModal from '@/components/ExpiryModal';
 
 interface Props {
   item: Item;
@@ -15,6 +16,7 @@ interface Props {
   dragRef?: (el: HTMLTableRowElement | null) => void;
   onStockChange: (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => void;
   onProductNameChange: (id: string, name: string | null) => void;
+  onExpiryChange: (id: string, expiry: string | null) => void;
   onDelete: (id: string) => void;
 }
 
@@ -157,7 +159,7 @@ const StockCell = forwardRef<StockCellRef, {
 });
 
 const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
-  { item, user, showExpiry, highlighted, reorderMode, dragHandleProps, dragStyle, dragRef, onStockChange, onProductNameChange, onDelete },
+  { item, user, showExpiry, highlighted, reorderMode, dragHandleProps, dragStyle, dragRef, onStockChange, onProductNameChange, onExpiryChange, onDelete },
   ref
 ) {
   const status = getStockStatus(item);
@@ -172,6 +174,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
   const [editingProductName, setEditingProductName] = useState(false);
   const [productNameInput, setProductNameInput] = useState('');
   const [showPriceModal, setShowPriceModal] = useState(false);
+  const [showExpiryModal, setShowExpiryModal] = useState(false);
 
   useImperativeHandle(ref, () => ({
     focusStock: () => stockRef.current?.startEditing(),
@@ -211,6 +214,13 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
           onClose={() => setShowPriceModal(false)}
         />
       )}
+      <ExpiryModal
+        open={showExpiryModal}
+        itemName={item.name}
+        currentExpiry={item.expiry_date ?? null}
+        onClose={() => setShowExpiryModal(false)}
+        onSave={(expiry) => onExpiryChange(item.id, expiry)}
+      />
     <tr
       ref={reorderMode ? combinedRef : rowRef}
       id={`item-${item.id}`}
@@ -318,8 +328,18 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
       </td>
 
       {showExpiry && (
-        <td className="px-4 py-3 text-sm text-center text-gray-400 whitespace-nowrap min-w-[90px]">
-          {item.expiry_date ?? '-'}
+        <td className="px-4 py-3 text-sm text-center whitespace-nowrap min-w-[90px]">
+          {canEdit ? (
+            <button
+              onClick={() => setShowExpiryModal(true)}
+              className="text-gray-400 hover:text-pink-500 hover:underline underline-offset-2 transition-colors"
+              title="유통기한 수정"
+            >
+              {item.expiry_date ?? '+ 입력'}
+            </button>
+          ) : (
+            <span className="text-gray-400">{item.expiry_date ?? '-'}</span>
+          )}
         </td>
       )}
       {canEdit && (
