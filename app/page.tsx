@@ -9,6 +9,23 @@ import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { Button } from '@/components/ui/button';
 
+const BAKERY_GROUPS: { label: string; match: (name: string) => boolean }[] = [
+  { label: '크로칸슈', match: (n) => n.includes('크로칸슈') },
+  { label: '쿠키슈',   match: (n) => n.includes('쿠키슈') },
+  { label: '크루아상', match: (n) => n.includes('크루아상') },
+  { label: '소금빵',   match: (n) => ['소금빵', '소금식빵', '팥식빵', '말차 식빵', '모찌 식빵'].some(k => n === k || n.includes(k)) },
+  { label: '청크',     match: (n) => n.includes('청크') },
+  { label: '도넛',     match: (n) => n.includes('도넛') },
+  { label: '핫도그',   match: (n) => n.includes('핫도그') },
+  { label: '깨찰빵',   match: (n) => n.includes('깨찰빵') },
+  { label: '베이글',   match: (n) => n.includes('베이글') },
+];
+
+function getShortName(name: string, groupLabel: string): string {
+  const stripped = name.replace(groupLabel, '').trim();
+  return stripped.length > 0 ? stripped : name;
+}
+
 export default function Home() {
   const [items, setItems] = useState<Item[]>([]);
   const [activeCategory, setActiveCategory] = useState<Category>('파우더');
@@ -202,37 +219,76 @@ export default function Home() {
 
                 {/* 부족 품목 목록 (스크롤) */}
                 {!isOk && !loading && (
-                  <div className="max-h-40 overflow-y-auto divide-y divide-pink-50">
-                    {dangerItems.map(item => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleAlertClick(item)}
-                        className="flex items-center justify-between px-4 py-2.5 bg-red-50/40 cursor-pointer hover:bg-red-100/60 transition-colors"
-                      >
-                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
-                          <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
-                            재고 {item.stock}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    {warningItems.map(item => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleAlertClick(item)}
-                        className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40 cursor-pointer hover:bg-yellow-100/60 transition-colors"
-                      >
-                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
-                          <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">
-                            {item.stock} / {item.min_qty}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="max-h-52 overflow-y-auto divide-y divide-pink-50">
+                    {category === '베이커리' ? (
+                      <>
+                        {BAKERY_GROUPS.map(group => {
+                          const groupItems = lowItems.filter(i => group.match(i.name));
+                          if (groupItems.length === 0) return null;
+                          return (
+                            <div key={group.label} className="flex items-start gap-3 px-4 py-2.5 hover:bg-pink-50/40 transition-colors">
+                              <span className="text-xs font-bold text-gray-500 w-14 shrink-0 pt-0.5">{group.label}</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {groupItems.map(item => {
+                                  const isDanger = getStockStatus(item) === 'danger';
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      onClick={() => handleAlertClick(item)}
+                                      className={`text-xs px-2.5 py-1 rounded-full font-medium cursor-pointer transition-colors ${
+                                        isDanger
+                                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                          : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                      }`}
+                                    >
+                                      {getShortName(item.name, group.label)} ({item.stock})
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {lowItems.filter(i => !BAKERY_GROUPS.some(g => g.match(i.name))).map(item => {
+                          const isDanger = getStockStatus(item) === 'danger';
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={() => handleAlertClick(item)}
+                              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-pink-50/40 transition-colors ${isDanger ? 'bg-red-50/30' : 'bg-yellow-50/30'}`}
+                            >
+                              <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isDanger ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                재고 {item.stock}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      <>
+                        {dangerItems.map(item => (
+                          <div key={item.id} onClick={() => handleAlertClick(item)}
+                            className="flex items-center justify-between px-4 py-2.5 bg-red-50/40 cursor-pointer hover:bg-red-100/60 transition-colors">
+                            <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
+                              <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">재고 {item.stock}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {warningItems.map(item => (
+                          <div key={item.id} onClick={() => handleAlertClick(item)}
+                            className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40 cursor-pointer hover:bg-yellow-100/60 transition-colors">
+                            <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
+                              <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">{item.stock} / {item.min_qty}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
 
