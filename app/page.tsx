@@ -79,8 +79,8 @@ export default function Home() {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>재고 관리</h1>
-          <p className="text-xs text-pink-400 mt-0.5">카페 재고 현황</p>
+          <h1 className="text-4xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>재고 관리</h1>
+          <p className="text-xs text-pink-300 mt-1">카페 재고 현황</p>
         </div>
         <div className="flex items-center gap-2">
           {user ? (
@@ -182,15 +182,9 @@ export default function Home() {
                   <span className="font-bold text-pink-700 text-base" style={{ fontFamily: 'var(--font-jua)' }}>
                     {category}
                   </span>
-                  {loading ? (
-                    <span className="text-xs text-pink-300">로딩 중...</span>
-                  ) : isOk ? (
+                  {!loading && isOk && (
                     <span className="text-xs text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                       정상
-                    </span>
-                  ) : (
-                    <span className="text-xs text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium">
-                      {lowItems.length}개 부족
                     </span>
                   )}
                 </div>
