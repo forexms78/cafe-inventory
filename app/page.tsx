@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Item, Category, CATEGORIES, CafeUser, getStockStatus } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
-import LowStockBanner from '@/components/LowStockBanner';
 import CategoryTabs from '@/components/CategoryTabs';
 import ItemRow from '@/components/ItemRow';
 import AddItemModal from '@/components/AddItemModal';
@@ -45,7 +44,6 @@ export default function Home() {
     const item = items.find(i => i.id === id);
     if (!item) return;
     const newStock = Math.max(0, item.stock + delta);
-    // 낙관적 업데이트
     setItems(prev => prev.map(i => i.id === id ? { ...i, stock: newStock } : i));
     await fetch('/api/items', {
       method: 'PATCH',
@@ -94,44 +92,30 @@ export default function Home() {
                 {user.name} · {user.role === 'owner' ? '오너' : '매니저'}
               </span>
               {user.role === 'owner' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowChangePw(true)}
-                  className="border-pink-200 text-pink-600 hover:bg-pink-50 text-xs"
-                >
+                <Button variant="outline" size="sm" onClick={() => setShowChangePw(true)}
+                  className="border-pink-200 text-pink-600 hover:bg-pink-50 text-xs">
                   비밀번호 변경
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => { clearSession(); setUser(null); }}
-                className="border-pink-200 text-pink-600 hover:bg-pink-50 text-xs"
-              >
+              <Button variant="outline" size="sm" onClick={() => { clearSession(); setUser(null); }}
+                className="border-pink-200 text-pink-600 hover:bg-pink-50 text-xs">
                 로그아웃
               </Button>
             </>
           ) : (
-            <Button
-              size="sm"
-              onClick={() => setShowLogin(true)}
-              className="bg-pink-500 hover:bg-pink-600 text-white text-xs"
-            >
+            <Button size="sm" onClick={() => setShowLogin(true)}
+              className="bg-pink-500 hover:bg-pink-600 text-white text-xs">
               로그인
             </Button>
           )}
         </div>
       </div>
 
-      {/* 재고 부족 알림 배너 */}
-      <LowStockBanner items={items} />
-
       {/* 카테고리 탭 */}
       <CategoryTabs active={activeCategory} onChange={setActiveCategory} />
 
       {/* 재고 테이블 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden mb-8">
         {loading ? (
           <div className="py-16 text-center text-pink-300 text-sm">불러오는 중...</div>
         ) : (
@@ -153,9 +137,7 @@ export default function Home() {
             <tbody className="divide-y divide-pink-50">
               {sortedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-pink-200 text-sm">
-                    품목이 없습니다
-                  </td>
+                  <td colSpan={6} className="py-12 text-center text-pink-200 text-sm">품목이 없습니다</td>
                 </tr>
               ) : (
                 sortedItems.map(item => (
@@ -173,37 +155,94 @@ export default function Home() {
             </tbody>
           </table>
         )}
-
         {user && (
           <div className="p-4 border-t border-pink-50">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAddItem(true)}
-              className="w-full border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600"
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}
+              className="w-full border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600">
               + {activeCategory} 품목 추가
             </Button>
           </div>
         )}
       </div>
 
+      {/* 재고 부족 알림 섹션 */}
+      <div>
+        <h2 className="text-lg font-bold text-pink-700 mb-3" style={{ fontFamily: 'var(--font-jua)' }}>
+          재고 부족 알림
+        </h2>
+        <div className="flex flex-col gap-3">
+          {CATEGORIES.map(category => {
+            const catItems = items.filter(i => i.category === category);
+            const dangerItems = catItems.filter(i => getStockStatus(i) === 'danger');
+            const warningItems = catItems.filter(i => getStockStatus(i) === 'warning');
+            const lowItems = [...dangerItems, ...warningItems];
+            const isOk = !loading && lowItems.length === 0;
+
+            return (
+              <div key={category} className="bg-white rounded-2xl border border-pink-100 shadow-sm overflow-hidden">
+                {/* 카테고리 헤더 */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-pink-50 bg-pink-50/50">
+                  <span className="font-semibold text-pink-700 text-sm" style={{ fontFamily: 'var(--font-jua)' }}>
+                    {category}
+                  </span>
+                  {loading ? (
+                    <span className="text-xs text-pink-300">로딩 중...</span>
+                  ) : isOk ? (
+                    <span className="text-xs text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      정상
+                    </span>
+                  ) : (
+                    <span className="text-xs text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium">
+                      {lowItems.length}개 부족
+                    </span>
+                  )}
+                </div>
+
+                {/* 부족 품목 목록 (스크롤) */}
+                {!isOk && !loading && (
+                  <div className="max-h-40 overflow-y-auto divide-y divide-pink-50">
+                    {dangerItems.map(item => (
+                      <div key={item.id} className="flex items-center justify-between px-4 py-2.5 bg-red-50/40">
+                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
+                          <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                            재고 {item.stock}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {warningItems.map(item => (
+                      <div key={item.id} className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40">
+                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
+                          <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">
+                            {item.stock} / {item.min_qty}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 정상 */}
+                {isOk && (
+                  <div className="px-4 py-2.5 text-xs text-gray-400">모든 품목이 충분합니다.</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 모달들 */}
-      <AddItemModal
-        open={showAddItem}
-        category={activeCategory}
-        onClose={() => setShowAddItem(false)}
-        onAdd={handleAdd}
-      />
-      <LoginModal
-        open={showLogin}
+      <AddItemModal open={showAddItem} category={activeCategory}
+        onClose={() => setShowAddItem(false)} onAdd={handleAdd} />
+      <LoginModal open={showLogin}
         onSuccess={u => { saveSession(u); setUser(u); setShowLogin(false); }}
-        onClose={() => setShowLogin(false)}
-      />
-      <ChangePasswordModal
-        open={showChangePw}
-        onClose={() => setShowChangePw(false)}
-      />
+        onClose={() => setShowLogin(false)} />
+      <ChangePasswordModal open={showChangePw} onClose={() => setShowChangePw(false)} />
     </main>
   );
 }
