@@ -50,7 +50,6 @@ export default function Home() {
   }, [fetchItems]);
 
   const categoryItems = items.filter(i => i.category === activeCategory);
-  const showOfficeStock = categoryItems.some(i => i.office_stock !== null && i.office_stock !== undefined);
   const showExpiry = ['오믈렛및마카롱', '도쿄롤', '케익'].includes(activeCategory);
 
   const sortedItems = categoryItems;
@@ -64,15 +63,12 @@ export default function Home() {
     setTimeout(() => setHighlightedId(null), 2500);
   };
 
-  const handleStockChange = async (id: string, delta: number) => {
-    const item = items.find(i => i.id === id);
-    if (!item) return;
-    const newStock = Math.max(0, item.stock + delta);
-    setItems(prev => prev.map(i => i.id === id ? { ...i, stock: newStock } : i));
+  const handleStockChange = async (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
     await fetch('/api/items', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, stock: newStock }),
+      body: JSON.stringify({ id, [field]: value }),
     });
   };
 
@@ -148,10 +144,9 @@ export default function Home() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-pink-500 uppercase tracking-wide">품목</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">최소</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">재고</th>
-                {showOfficeStock && (
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">사무실</th>
-                )}
+                <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">재고</th>
+                <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">팬트리</th>
+                <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">사무실</th>
                 {showExpiry && (
                   <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">유통기한</th>
                 )}
@@ -169,7 +164,6 @@ export default function Home() {
                     key={item.id}
                     item={item}
                     user={user}
-                    showOfficeStock={showOfficeStock}
                     showExpiry={showExpiry}
                     highlighted={highlightedId === item.id}
                     onStockChange={handleStockChange}

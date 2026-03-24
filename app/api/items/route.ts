@@ -20,11 +20,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { id, stock, office_stock } = await req.json();
-  const updates: Record<string, unknown> = { stock };
-  if (office_stock !== undefined) updates.office_stock = office_stock;
+  const body = await req.json();
+  const { id, ...fields } = body;
   const { data, error } = await supabase
-    .from('items').update(updates).eq('id', id).select().single();
+    .from('items').update(fields).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }

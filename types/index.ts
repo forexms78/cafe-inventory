@@ -8,6 +8,7 @@ export interface Item {
   name: string;
   min_qty: string;
   stock: number;
+  pantry_stock?: number | null;
   office_stock?: number | null;
   expiry_date?: string | null;
   created_at: string;
