@@ -4,10 +4,31 @@ import { Item, Category, CATEGORIES, CafeUser, getStockStatus } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
 import CategoryTabs from '@/components/CategoryTabs';
 import ItemRow from '@/components/ItemRow';
+import SortableItemRow from '@/components/SortableItemRow';
 import AddItemModal from '@/components/AddItemModal';
 import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { Button } from '@/components/ui/button';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+
+const CATEGORY_OFFSETS: Record<Category, number> = {
+  '파우더': 0,
+  '시럽': 1000,
+  '이외품목': 2000,
+  '베이커리': 3000,
+  '오믈렛및마카롱': 4000,
+  '도쿄롤': 5000,
+  '케익': 6000,
+};
 
 const BAKERY_GROUPS: { label: string; match: (name: string) => boolean }[] = [
   { label: '크로칸슈', match: (n) => n.includes('크로칸슈') },
@@ -35,6 +56,8 @@ export default function Home() {
   const [showChangePw, setShowChangePw] = useState(false);
   const [loading, setLoading] = useState(true);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [reorderItems, setReorderItems] = useState<Item[]>([]);
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items');
@@ -51,8 +74,52 @@ export default function Home() {
 
   const categoryItems = items.filter(i => i.category === activeCategory);
   const showExpiry = ['오믈렛및마카롱', '도쿄롤', '케익'].includes(activeCategory);
+  const sortedItems = reorderMode ? reorderItems : categoryItems;
 
-  const sortedItems = categoryItems;
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+  );
+
+  const handleReorderStart = () => {
+    setReorderItems([...categoryItems]);
+    setReorderMode(true);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setReorderItems(prev => {
+        const oldIndex = prev.findIndex(i => i.id === active.id);
+        const newIndex = prev.findIndex(i => i.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const handleReorderSave = async () => {
+    const offset = CATEGORY_OFFSETS[activeCategory];
+    const updates = reorderItems.map((item, index) => ({
+      id: item.id,
+      sort_order: offset + index,
+    }));
+    await Promise.all(updates.map(u =>
+      fetch('/api/items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: u.id, sort_order: u.sort_order }),
+      })
+    ));
+    setItems(prev => {
+      const updated = [...prev];
+      updates.forEach(u => {
+        const i = updated.findIndex(item => item.id === u.id);
+        if (i !== -1) updated[i] = { ...updated[i], sort_order: u.sort_order };
+      });
+      return updated.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    });
+    setReorderMode(false);
+  };
 
   const handleAlertClick = (item: Item) => {
     setActiveCategory(item.category);
@@ -69,6 +136,15 @@ export default function Home() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, [field]: value }),
+    });
+  };
+
+  const handleProductNameChange = async (id: string, name: string | null) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, product_name: name } : i));
+    await fetch('/api/items', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, product_name: name }),
     });
   };
 
@@ -103,7 +179,7 @@ export default function Home() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-4xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>재고 관리</h1>
-          <p className="text-xs text-pink-300 mt-1">카페 재고 현황</p>
+          <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
         </div>
         <div className="flex items-center gap-2">
           {user ? (
@@ -139,9 +215,11 @@ export default function Home() {
         {loading ? (
           <div className="py-16 text-center text-pink-300 text-sm">불러오는 중...</div>
         ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <table className="w-full">
             <thead className="bg-pink-50/70 border-b border-pink-100">
               <tr>
+                {reorderMode && <th className="w-8" />}
                 <th className="px-4 py-3 text-left text-xs font-semibold text-pink-500 uppercase tracking-wide">품목</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">최소</th>
                 <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">재고</th>
@@ -150,14 +228,27 @@ export default function Home() {
                 {showExpiry && (
                   <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">유통기한</th>
                 )}
-                {user && <th className="px-4 py-3" />}
+                {user && !reorderMode && <th className="px-4 py-3" />}
               </tr>
             </thead>
+            <SortableContext items={sortedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <tbody className="divide-y divide-pink-50">
               {sortedItems.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-pink-200 text-sm">품목이 없습니다</td>
                 </tr>
+              ) : reorderMode ? (
+                sortedItems.map(item => (
+                  <SortableItemRow
+                    key={item.id}
+                    item={item}
+                    user={user}
+                    showExpiry={showExpiry}
+                    onStockChange={handleStockChange}
+                    onProductNameChange={handleProductNameChange}
+                    onDelete={handleDelete}
+                  />
+                ))
               ) : (
                 sortedItems.map(item => (
                   <ItemRow
@@ -167,19 +258,35 @@ export default function Home() {
                     showExpiry={showExpiry}
                     highlighted={highlightedId === item.id}
                     onStockChange={handleStockChange}
+                    onProductNameChange={handleProductNameChange}
                     onDelete={handleDelete}
                   />
                 ))
               )}
             </tbody>
+            </SortableContext>
           </table>
+          </DndContext>
         )}
         {user && (
-          <div className="p-4 border-t border-pink-50">
-            <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}
-              className="w-full border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600">
-              + {activeCategory} 품목 추가
-            </Button>
+          <div className="p-4 border-t border-pink-50 flex gap-2">
+            {!reorderMode ? (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}
+                  className="flex-1 border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600">
+                  + {activeCategory} 품목 추가
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleReorderStart}
+                  className="border-pink-200 text-pink-500 hover:bg-pink-50">
+                  위치변경
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" onClick={handleReorderSave}
+                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white">
+                저장
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -189,7 +296,7 @@ export default function Home() {
         <h2 className="text-lg font-bold text-pink-700 mb-3" style={{ fontFamily: 'var(--font-jua)' }}>
           재고 부족 알림
         </h2>
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {CATEGORIES.map(category => {
             const catItems = items.filter(i => i.category === category);
             const dangerItems = catItems.filter(i => getStockStatus(i) === 'danger');
@@ -214,75 +321,26 @@ export default function Home() {
                 {/* 부족 품목 목록 (스크롤) */}
                 {!isOk && !loading && (
                   <div className="max-h-52 overflow-y-auto divide-y divide-pink-50">
-                    {category === '베이커리' ? (
-                      <>
-                        {BAKERY_GROUPS.map(group => {
-                          const groupItems = lowItems.filter(i => group.match(i.name));
-                          if (groupItems.length === 0) return null;
-                          return (
-                            <div key={group.label} className="flex items-start gap-3 px-4 py-2.5 hover:bg-pink-50/40 transition-colors">
-                              <span className="text-xs font-bold text-gray-500 w-14 shrink-0 pt-0.5">{group.label}</span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {groupItems.map(item => {
-                                  const isDanger = getStockStatus(item) === 'danger';
-                                  return (
-                                    <button
-                                      key={item.id}
-                                      onClick={() => handleAlertClick(item)}
-                                      className={`text-xs px-2.5 py-1 rounded-full font-medium cursor-pointer transition-colors ${
-                                        isDanger
-                                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                          : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                      }`}
-                                    >
-                                      {getShortName(item.name, group.label)} ({item.stock})
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {lowItems.filter(i => !BAKERY_GROUPS.some(g => g.match(i.name))).map(item => {
-                          const isDanger = getStockStatus(item) === 'danger';
-                          return (
-                            <div
-                              key={item.id}
-                              onClick={() => handleAlertClick(item)}
-                              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-pink-50/40 transition-colors ${isDanger ? 'bg-red-50/30' : 'bg-yellow-50/30'}`}
-                            >
-                              <span className="text-sm text-gray-800 font-medium">{item.name}</span>
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isDanger ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                재고 {item.stock}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </>
-                    ) : (
-                      <>
-                        {dangerItems.map(item => (
-                          <div key={item.id} onClick={() => handleAlertClick(item)}
-                            className="flex items-center justify-between px-4 py-2.5 bg-red-50/40 cursor-pointer hover:bg-red-100/60 transition-colors">
-                            <span className="text-sm text-gray-800 font-medium">{item.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
-                              <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">재고 {item.stock}</span>
-                            </div>
-                          </div>
-                        ))}
-                        {warningItems.map(item => (
-                          <div key={item.id} onClick={() => handleAlertClick(item)}
-                            className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40 cursor-pointer hover:bg-yellow-100/60 transition-colors">
-                            <span className="text-sm text-gray-800 font-medium">{item.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
-                              <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">{item.stock} / {item.min_qty}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
+                    {dangerItems.map(item => (
+                      <div key={item.id} onClick={() => handleAlertClick(item)}
+                        className="flex items-center justify-between px-4 py-2.5 bg-red-50/40 cursor-pointer hover:bg-red-100/60 transition-colors">
+                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
+                          <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">재고 {item.stock}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {warningItems.map(item => (
+                      <div key={item.id} onClick={() => handleAlertClick(item)}
+                        className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40 cursor-pointer hover:bg-yellow-100/60 transition-colors">
+                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
+                          <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">{item.stock} / {item.min_qty}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 

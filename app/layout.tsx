@@ -1,21 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Jua } from "next/font/google";
+import { Jua, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const jua = Jua({
   variable: "--font-jua",
   subsets: ["latin"],
   weight: "400",
+});
+
+const notoSansKR = Noto_Sans_KR({
+  variable: "--font-noto",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -30,10 +26,21 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${jua.variable} h-full antialiased`}
+      lang="ko"
+      className={`${jua.variable} ${notoSansKR.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-pink-50/30">{children}</body>
+      <body className="min-h-full flex flex-col bg-pink-50/30" style={{ fontFamily: 'var(--font-noto), sans-serif' }}>
+        <div
+          className="fixed inset-0 -z-10 pointer-events-none"
+          style={{
+            backgroundImage: "url('/bg-pattern.png')",
+            backgroundSize: '90px 90px',
+            backgroundRepeat: 'repeat',
+            opacity: 0.07,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

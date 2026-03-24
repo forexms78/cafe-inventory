@@ -7,14 +7,21 @@ const supabase = createClient(
 );
 
 export async function GET() {
-  const { data, error } = await supabase.from('items').select('*').order('created_at');
+  const { data, error } = await supabase.from('items').select('*').order('sort_order', { nullsFirst: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { data, error } = await supabase.from('items').insert(body).select().single();
+  const { data: maxRow } = await supabase
+    .from('items')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .single();
+  const nextOrder = (maxRow?.sort_order ?? 0) + 1;
+  const { data, error } = await supabase.from('items').insert({ ...body, sort_order: nextOrder }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }

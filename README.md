@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cafe Inventory — 카페 재고 관리 시스템
+
+> AI 에이전트(Claude Code)와 협업해 1일 만에 구축한 실전 투입 재고 관리 웹앱
+
+**실제 운영 중인 디저트 카페의 재고 파악 지연 문제를 해결하고, 부족 품목 발견 즉시 주문으로 이어지는 원스톱 플로우를 구현했습니다.**
+
+---
+
+## Problem — 무엇이 문제였나
+
+카페에는 **카운터 재고 / 팬트리 재고 / 사무실 재고** 3곳에 재고가 분산되어 있습니다.
+
+매니저들은 매일 아침 각 장소를 돌며 수기로 재고를 확인했고,
+어떤 품목이 부족한지 한눈에 파악할 방법이 없었습니다.
+
+결과적으로:
+- 재고 부족을 늦게 발견해 납품 주문 타이밍을 놓치는 일이 반복
+- 주문해야 할 제품을 찾기 위해 쿠팡·네이버쇼핑을 별도로 검색하는 불편함
+- 유통기한이 있는 품목(오믈렛·마카롱·케익)의 관리 누락
+
+## Solution — 어떻게 해결했나
+
+AI 에이전트(Claude Code)와 협업해 **재고 현황 파악 → 부족 감지 → 주문 연결**을 하나의 화면에서 처리하는 웹앱을 구현했습니다.
+
+```
+재고 입력 → 최소 수량 비교 → 부족 알림 → 클릭 1회 → 쿠팡/네이버쇼핑 즉시 검색
+```
+
+---
+
+## Features
+
+### 재고 현황 관리
+- **7개 카테고리** 탭 분리: 파우더 / 시럽 / 이외품목 / 베이커리 / 오믈렛및마카롱 / 도쿄롤 / 케익
+- **3개 위치 통합 추적**: 매장 재고 + 팬트리 + 사무실 합산 계산
+- **최소 수량 기준 자동 상태 판정**: 위험(빨강) / 주의(노랑) / 정상(초록)
+
+### 재고 부족 알림 대시보드
+- 하단 알림 패널에서 **전 카테고리 부족 품목 한눈에 확인**
+- 알림 품목 클릭 시 해당 카테고리 탭으로 자동 이동 + 하이라이트
+
+### 주문 연계 (재고 → 주문 원스톱)
+- 품목별 **제품명(product_name)** 등록 후 가격 비교 버튼 클릭
+- **쿠팡 / 다나와 / 네이버쇼핑** 3개 채널에 즉시 검색 연결
+- 재고 부족 발견 → 주문까지 클릭 2회로 완료
+
+### 운영 편의 기능
+- **드래그앤드롭 정렬**: 자주 쓰는 품목을 위로 배치
+- **유통기한 관리**: 오믈렛·마카롱·도쿄롤·케익 카테고리 전용
+- **권한 분리**: 오너(모든 기능) / 매니저(재고 입력만)
+- **모바일 최적화**: 현장에서 스마트폰으로 즉시 입력 가능
+
+---
+
+## Tech Stack
+
+| 영역 | 기술 |
+|------|------|
+| Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS |
+| UI | shadcn/ui, @dnd-kit (드래그앤드롭) |
+| Backend | Next.js API Routes (Route Handlers) |
+| Database | Supabase (PostgreSQL) |
+| 인증 | 세션 기반 (오너/매니저 역할 분리) |
+| 배포 | Vercel |
+
+---
+
+## Architecture
+
+```
+Browser (Next.js App Router)
+  ├── page.tsx          — 메인 대시보드 (재고 테이블 + 부족 알림 패널)
+  ├── /api/items        — CRUD API (GET/POST/PATCH/DELETE)
+  └── /api/auth         — 로그인/비밀번호 변경
+
+Supabase
+  └── items 테이블
+       ├── category / name / min_qty
+       ├── stock / pantry_stock / office_stock
+       ├── expiry_date / product_name
+       └── sort_order
+```
+
+---
+
+## STAR — 포트폴리오 스토리
+
+| | |
+|--|--|
+| **Situation** | 디저트 카페 매니저들이 3곳에 분산된 재고를 수기로 파악하면서 부족 품목 발견이 늦어 주문 타이밍을 반복적으로 놓침 |
+| **Task** | AI 에이전트와 협업해 실제 운영 카페에 투입할 수 있는 실시간 재고 관리 시스템 설계 및 구현, 재고 부족 감지 → 주문 연계까지의 플로우 완성 |
+| **Action** | 3개 위치 재고 합산 자동 계산, 최소 수량 기준 위험/주의/정상 자동 분류, 부족 품목 클릭 시 쿠팡·네이버쇼핑 즉시 연결, 드래그앤드롭 정렬, 유통기한 추적, 오너/매니저 권한 분리를 Next.js + Supabase로 구현 |
+| **Result** | 재고 파악 → 주문까지 클릭 2회로 단축, 전 카테고리 부족 현황 대시보드 1화면 제공, 실제 카페 현장 투입 |
+
+---
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# 의존성 설치
+npm install
+
+# 환경변수 설정
+cp .env.example .env.local
+# NEXT_PUBLIC_SUPABASE_URL=...
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# SUPABASE_SERVICE_ROLE_KEY=...
+
+# 개발 서버 실행
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Built With AI
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+이 프로젝트는 **Claude Code(AI 에이전트)**와의 페어 프로그래밍으로 구현되었습니다.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 요구사항 설계 → 스펙 문서 작성 → 구현 계획 수립 → 코드 생성까지 AI 에이전트가 각 단계를 담당
+- PO(개발자)는 "무엇을 만들지"만 결정, "어떻게 만들지"는 AI 에이전트가 제안하고 실행
+- AI와 협업한 개발 워크플로우 자체가 이 프로젝트의 핵심 기술적 포인트

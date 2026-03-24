@@ -11,16 +11,19 @@ export interface Item {
   pantry_stock?: number | null;
   office_stock?: number | null;
   expiry_date?: string | null;
+  purchase_url?: string | null;
+  product_name?: string | null;
+  sort_order?: number | null;
   created_at: string;
 }
 
 export type StockStatus = 'danger' | 'warning' | 'ok';
 
 export function getStockStatus(item: Item): StockStatus {
-  const stock = item.stock;
+  const total = item.stock + (item.pantry_stock ?? 0) + (item.office_stock ?? 0);
   const min = parseFloat(item.min_qty) || 0;
-  if (stock === 0) return 'danger';
-  if (stock < min) return 'warning';
+  if (total === 0) return 'danger';
+  if (total < min) return 'warning';
   return 'ok';
 }
 
