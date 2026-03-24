@@ -5,7 +5,6 @@ import { getSession, saveSession, clearSession } from '@/lib/auth';
 import LowStockBanner from '@/components/LowStockBanner';
 import CategoryTabs from '@/components/CategoryTabs';
 import ItemRow from '@/components/ItemRow';
-import QuantityModal from '@/components/QuantityModal';
 import AddItemModal from '@/components/AddItemModal';
 import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
@@ -15,7 +14,6 @@ export default function Home() {
   const [items, setItems] = useState<Item[]>([]);
   const [activeCategory, setActiveCategory] = useState<Category>('파우더');
   const [user, setUser] = useState<CafeUser | null>(null);
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
@@ -43,13 +41,17 @@ export default function Home() {
     return order[getStockStatus(a)] - order[getStockStatus(b)];
   });
 
-  const handleSaveStock = async (id: string, stock: number, officeStock?: number) => {
+  const handleStockChange = async (id: string, delta: number) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    const newStock = Math.max(0, item.stock + delta);
+    // 낙관적 업데이트
+    setItems(prev => prev.map(i => i.id === id ? { ...i, stock: newStock } : i));
     await fetch('/api/items', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, stock, office_stock: officeStock }),
+      body: JSON.stringify({ id, stock: newStock }),
     });
-    fetchItems();
   };
 
   const handleDelete = async (id: string) => {
@@ -82,7 +84,7 @@ export default function Home() {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-pink-700">재고 관리</h1>
+          <h1 className="text-2xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>재고 관리</h1>
           <p className="text-xs text-pink-400 mt-0.5">카페 재고 현황</p>
         </div>
         <div className="flex items-center gap-2">
@@ -163,7 +165,7 @@ export default function Home() {
                     user={user}
                     showOfficeStock={showOfficeStock}
                     showExpiry={showExpiry}
-                    onEdit={setEditingItem}
+                    onStockChange={handleStockChange}
                     onDelete={handleDelete}
                   />
                 ))
@@ -187,11 +189,6 @@ export default function Home() {
       </div>
 
       {/* 모달들 */}
-      <QuantityModal
-        item={editingItem}
-        onClose={() => setEditingItem(null)}
-        onSave={handleSaveStock}
-      />
       <AddItemModal
         open={showAddItem}
         category={activeCategory}

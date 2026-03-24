@@ -7,7 +7,7 @@ interface Props {
   user: CafeUser | null;
   showOfficeStock: boolean;
   showExpiry: boolean;
-  onEdit: (item: Item) => void;
+  onStockChange: (id: string, delta: number) => void;
   onDelete: (id: string) => void;
 }
 
@@ -23,24 +23,36 @@ const STOCK_COLORS = {
   ok: 'text-emerald-600 font-medium',
 };
 
-export default function ItemRow({ item, user, showOfficeStock, showExpiry, onEdit, onDelete }: Props) {
+export default function ItemRow({ item, user, showOfficeStock, showExpiry, onStockChange, onDelete }: Props) {
   const status = getStockStatus(item);
   const canEdit = !!user;
 
   return (
     <tr className={`${ROW_COLORS[status]} transition-colors hover:brightness-95`}>
       <td className="px-4 py-3 text-sm font-medium text-gray-800">{item.name}</td>
-      <td className="px-4 py-3 text-sm text-gray-500 text-center">{item.min_qty}</td>
-      <td className={`px-4 py-3 text-sm text-center ${STOCK_COLORS[status]}`}>
+      <td className="px-4 py-3 text-sm text-gray-400 text-center">{item.min_qty}</td>
+      <td className="px-4 py-3 text-center">
         {canEdit ? (
-          <button
-            onClick={() => onEdit(item)}
-            className="underline underline-offset-2 hover:opacity-70 transition-opacity"
-          >
-            {item.stock}
-          </button>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={() => onStockChange(item.id, -1)}
+              disabled={item.stock <= 0}
+              className="w-7 h-7 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-base leading-none transition-colors"
+            >
+              −
+            </button>
+            <span className={`w-8 text-center text-sm ${STOCK_COLORS[status]}`}>
+              {item.stock}
+            </span>
+            <button
+              onClick={() => onStockChange(item.id, +1)}
+              className="w-7 h-7 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 font-bold text-base leading-none transition-colors"
+            >
+              +
+            </button>
+          </div>
         ) : (
-          item.stock
+          <span className={`text-sm ${STOCK_COLORS[status]}`}>{item.stock}</span>
         )}
       </td>
       {showOfficeStock && (
