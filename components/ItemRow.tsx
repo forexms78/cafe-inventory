@@ -7,6 +7,7 @@ interface Props {
   user: CafeUser | null;
   showOfficeStock: boolean;
   showExpiry: boolean;
+  highlighted?: boolean;
   onStockChange: (id: string, delta: number) => void;
   onDelete: (id: string) => void;
 }
@@ -23,12 +24,15 @@ const STOCK_COLORS = {
   ok: 'text-emerald-600 font-medium',
 };
 
-export default function ItemRow({ item, user, showOfficeStock, showExpiry, onStockChange, onDelete }: Props) {
+export default function ItemRow({ item, user, showOfficeStock, showExpiry, highlighted, onStockChange, onDelete }: Props) {
   const status = getStockStatus(item);
   const canEdit = !!user;
 
   return (
-    <tr className={`${ROW_COLORS[status]} transition-colors hover:brightness-95`}>
+    <tr
+      id={`item-${item.id}`}
+      className={`${ROW_COLORS[status]} transition-all hover:brightness-95 ${highlighted ? 'ring-2 ring-inset ring-pink-400 animate-pulse' : ''}`}
+    >
       <td className="px-4 py-3 text-sm font-medium text-gray-800">{item.name}</td>
       <td className="px-4 py-3 text-sm text-gray-400 text-center">{item.min_qty}</td>
       <td className="px-4 py-3 text-center">

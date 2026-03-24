@@ -17,6 +17,7 @@ export default function Home() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items');
@@ -36,6 +37,15 @@ export default function Home() {
   const showExpiry = ['오믈렛및마카롱', '도쿄롤', '케익'].includes(activeCategory);
 
   const sortedItems = categoryItems;
+
+  const handleAlertClick = (item: Item) => {
+    setActiveCategory(item.category);
+    setHighlightedId(item.id);
+    setTimeout(() => {
+      document.getElementById(`item-${item.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    setTimeout(() => setHighlightedId(null), 2500);
+  };
 
   const handleStockChange = async (id: string, delta: number) => {
     const item = items.find(i => i.id === id);
@@ -144,6 +154,7 @@ export default function Home() {
                     user={user}
                     showOfficeStock={showOfficeStock}
                     showExpiry={showExpiry}
+                    highlighted={highlightedId === item.id}
                     onStockChange={handleStockChange}
                     onDelete={handleDelete}
                   />
@@ -193,7 +204,11 @@ export default function Home() {
                 {!isOk && !loading && (
                   <div className="max-h-40 overflow-y-auto divide-y divide-pink-50">
                     {dangerItems.map(item => (
-                      <div key={item.id} className="flex items-center justify-between px-4 py-2.5 bg-red-50/40">
+                      <div
+                        key={item.id}
+                        onClick={() => handleAlertClick(item)}
+                        className="flex items-center justify-between px-4 py-2.5 bg-red-50/40 cursor-pointer hover:bg-red-100/60 transition-colors"
+                      >
                         <span className="text-sm text-gray-800 font-medium">{item.name}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
@@ -204,7 +219,11 @@ export default function Home() {
                       </div>
                     ))}
                     {warningItems.map(item => (
-                      <div key={item.id} className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40">
+                      <div
+                        key={item.id}
+                        onClick={() => handleAlertClick(item)}
+                        className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40 cursor-pointer hover:bg-yellow-100/60 transition-colors"
+                      >
                         <span className="text-sm text-gray-800 font-medium">{item.name}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
