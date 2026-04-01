@@ -188,7 +188,7 @@ export default function Home() {
       setItems(current => current.map(i => i.id === id ? { ...i, [field]: prev } : i));
       toast.error('저장 실패. 다시 시도해주세요.');
     } else {
-      toast.success('저장됨');
+      toast.success('저장됨', { id: 'stock-save' });
       const itemName = items.find(i => i.id === id)?.name ?? id;
       appendLog({
         timestamp: new Date().toISOString(),
