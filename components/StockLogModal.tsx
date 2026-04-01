@@ -17,16 +17,13 @@ const FIELD_LABEL: Record<StockLogEntry['field'], string> = {
   office_stock: '사무실',
 };
 
-const LOG_KEY = 'cafe_stock_logs';
-const MAX_LOGS = 100;
-
-export function appendLog(entry: StockLogEntry) {
+export async function appendLog(entry: StockLogEntry) {
   try {
-    const raw = localStorage.getItem(LOG_KEY);
-    const logs: StockLogEntry[] = raw ? JSON.parse(raw) : [];
-    logs.unshift(entry);
-    if (logs.length > MAX_LOGS) logs.splice(MAX_LOGS);
-    localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
   } catch {}
 }
 
@@ -37,20 +34,37 @@ interface Props {
 
 export default function StockLogModal({ open, onClose }: Props) {
   const [logs, setLogs] = useState<StockLogEntry[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      try {
-        const raw = localStorage.getItem(LOG_KEY);
-        setLogs(raw ? JSON.parse(raw) : []);
-      } catch {
-        setLogs([]);
-      }
-    }
+    if (!open) return;
+    setLoading(true);
+    fetch('/api/logs')
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) { setLogs([]); return; }
+        setLogs(data.map((d: {
+          created_at: string;
+          item_name: string;
+          field: StockLogEntry['field'];
+          old_value: number;
+          new_value: number;
+          user_name: string;
+        }) => ({
+          timestamp: d.created_at,
+          itemName: d.item_name,
+          field: d.field,
+          oldValue: d.old_value,
+          newValue: d.new_value,
+          user: d.user_name,
+        })));
+      })
+      .catch(() => setLogs([]))
+      .finally(() => setLoading(false));
   }, [open]);
 
-  const handleClear = () => {
-    localStorage.removeItem(LOG_KEY);
+  const handleClear = async () => {
+    await fetch('/api/logs', { method: 'DELETE' });
     setLogs([]);
   };
 
@@ -65,7 +79,9 @@ export default function StockLogModal({ open, onClose }: Props) {
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto divide-y divide-pink-50 -mx-6 px-6">
-          {logs.length === 0 ? (
+          {loading ? (
+            <p className="py-10 text-center text-sm text-pink-200">불러오는 중...</p>
+          ) : logs.length === 0 ? (
             <p className="py-10 text-center text-sm text-gray-300">변경 이력이 없습니다.</p>
           ) : (
             logs.map((log, i) => {

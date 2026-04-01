@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import StockLogModal, { appendLog } from '@/components/StockLogModal';
+import StockLogModal from '@/components/StockLogModal';
 import { Item, Category, CATEGORIES, CafeUser, getStockStatus } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -60,6 +60,7 @@ export default function Home() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
   const [reorderItems, setReorderItems] = useState<Item[]>([]);
+  const [minEditMode, setMinEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -90,8 +91,18 @@ export default function Home() {
   );
 
   const handleReorderStart = () => {
+    setMinEditMode(false);
     setReorderItems([...categoryItems]);
     setReorderMode(true);
+  };
+
+  const handleMinQtyChange = async (id: string, minQty: string) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, min_qty: minQty } : i));
+    await fetch('/api/items', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, min_qty: minQty }),
+    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -190,14 +201,18 @@ export default function Home() {
     } else {
       toast.success('저장됨', { id: 'stock-save' });
       const itemName = items.find(i => i.id === id)?.name ?? id;
-      appendLog({
-        timestamp: new Date().toISOString(),
-        itemName,
-        field,
-        oldValue: prev as number,
-        newValue: value,
-        user: user?.name ?? '비로그인',
-      });
+      fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          itemName,
+          field,
+          oldValue: prev as number,
+          newValue: value,
+          user: user?.name ?? '비로그인',
+        }),
+      }).catch(() => {});
     }
   };
 
@@ -359,9 +374,11 @@ export default function Home() {
                     user={user}
                     showExpiry={showExpiry}
                     highlighted={highlightedId === item.id}
+                    minEditMode={minEditMode}
                     onStockChange={handleStockChange}
                     onProductNameChange={handleProductNameChange}
                     onExpiryChange={handleExpiryChange}
+                    onMinQtyChange={handleMinQtyChange}
                     onDelete={handleDelete}
                   />
                 ))
@@ -379,6 +396,15 @@ export default function Home() {
                 <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}
                   className="flex-1 border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600">
                   + {activeCategory} 품목 추가
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  onClick={() => setMinEditMode(v => !v)}
+                  className={minEditMode
+                    ? 'border-pink-400 bg-pink-50 text-pink-600 hover:bg-pink-100'
+                    : 'border-pink-200 text-pink-500 hover:bg-pink-50'}
+                >
+                  {minEditMode ? '수정완료' : '최소수량'}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleReorderStart}
                   className="border-pink-200 text-pink-500 hover:bg-pink-50">

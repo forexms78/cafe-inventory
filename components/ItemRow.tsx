@@ -11,12 +11,14 @@ interface Props {
   showExpiry: boolean;
   highlighted?: boolean;
   reorderMode?: boolean;
+  minEditMode?: boolean;
   dragHandleProps?: Record<string, unknown>;
   dragStyle?: React.CSSProperties;
   dragRef?: (el: HTMLTableRowElement | null) => void;
   onStockChange: (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => void;
   onProductNameChange: (id: string, name: string | null) => void;
   onExpiryChange: (id: string, expiry: string | null) => void;
+  onMinQtyChange?: (id: string, minQty: string) => void;
   onDelete: (id: string) => void;
 }
 
@@ -159,7 +161,7 @@ const StockCell = forwardRef<StockCellRef, {
 });
 
 const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
-  { item, user, showExpiry, highlighted, reorderMode, dragHandleProps, dragStyle, dragRef, onStockChange, onProductNameChange, onExpiryChange, onDelete },
+  { item, user, showExpiry, highlighted, reorderMode, minEditMode, dragHandleProps, dragStyle, dragRef, onStockChange, onProductNameChange, onExpiryChange, onMinQtyChange, onDelete },
   ref
 ) {
   const status = getStockStatus(item);
@@ -279,7 +281,26 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
           )}
         </div>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-400 text-center whitespace-nowrap">{item.min_qty}</td>
+      <td className="px-4 py-3 text-sm text-gray-400 text-center whitespace-nowrap">
+        {minEditMode && canEdit ? (
+          <input
+            key={`${item.id}-min`}
+            type="text"
+            defaultValue={item.min_qty}
+            onBlur={e => {
+              const val = e.target.value.trim();
+              if (val && val !== item.min_qty) onMinQtyChange?.(item.id, val);
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+              if (e.key === 'Escape') { e.currentTarget.value = item.min_qty; e.currentTarget.blur(); }
+            }}
+            className="w-14 text-center text-sm border border-pink-300 rounded-md outline-none focus:ring-1 focus:ring-pink-400 py-0.5"
+          />
+        ) : (
+          item.min_qty
+        )}
+      </td>
 
       {/* 재고 */}
       <td className="px-2 py-3 text-center">
