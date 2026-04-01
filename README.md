@@ -54,7 +54,9 @@ flowchart LR
 - **유통기한 관리**: 캘린더 피커로 날짜 입력, 오믈렛·마카롱·도쿄롤·케익 카테고리 전용
 - **권한 분리**: 오너(모든 기능) / 매니저(재고 입력만)
 - **모바일 최적화**: 테이블 가로 스크롤, 긴 상세명 자동 생략, 알림 1열 표시
-- **저장 피드백**: 재고 변경 시 토스트 메시지, API 실패 시 자동 롤백
+- **저장 피드백**: 재고 변경 시 토스트 메시지(중복 표시 없음), API 실패 시 자동 롤백
+- **최소수량 수정 모드**: [최소수량] 버튼 클릭 → 각 행 인라인 편집 활성화, 변경 즉시 저장
+- **재고 변경 로그**: 모든 사용자의 재고 변경 이력을 Supabase DB에 기록, 히든 모달에서 전체 조회 가능 (최근 200건)
 
 ---
 
@@ -83,16 +85,20 @@ flowchart TD
 
     subgraph API["API Routes"]
         Items["/api/items\nGET · POST · PATCH · DELETE"]
+        Logs["/api/logs\nGET · POST · DELETE"]
         Auth["/api/auth\n로그인 · 비밀번호 변경"]
     end
 
     subgraph DB["Supabase (PostgreSQL)"]
-        Table["items 테이블\ncategory · name · min_qty\nstock · pantry_stock · office_stock\nexpiry_date · product_name · sort_order"]
+        ItemsTable["items 테이블\ncategory · name · min_qty\nstock · pantry_stock · office_stock\nexpiry_date · product_name · sort_order"]
+        LogsTable["stock_logs 테이블\nitem_name · field · old_value\nnew_value · user_name · created_at"]
     end
 
     Browser --> Pages
     Pages --> API
-    API --> DB
+    Items --> ItemsTable
+    Logs --> LogsTable
+    Auth --> ItemsTable
 ```
 
 ```mermaid
@@ -101,8 +107,7 @@ erDiagram
         uuid id PK
         text category
         text name
-        text detail_name
-        int min_qty
+        text min_qty
         int stock
         int pantry_stock
         int office_stock
@@ -110,6 +115,16 @@ erDiagram
         text product_name
         int sort_order
         timestamp created_at
+    }
+
+    STOCK_LOGS {
+        uuid id PK
+        timestamp created_at
+        text item_name
+        text field
+        int old_value
+        int new_value
+        text user_name
     }
 ```
 
