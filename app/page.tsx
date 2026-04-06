@@ -12,6 +12,15 @@ import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
   DndContext,
   closestCenter,
   PointerSensor,
@@ -65,6 +74,9 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [showLogModal, setShowLogModal] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const resetSnapshotRef = useRef<{ id: string; stock: number }[]>([]);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleClickCount = useRef(0);
   const titleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -244,6 +256,60 @@ export default function Home() {
     fetchItems();
   };
 
+  const handleUndoReset = () => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+    const snapshot = resetSnapshotRef.current;
+    if (snapshot.length === 0) return;
+    setItems(prev => prev.map(i => {
+      const snap = snapshot.find(s => s.id === i.id);
+      return snap ? { ...i, stock: snap.stock } : i;
+    }));
+    resetSnapshotRef.current = [];
+    toast.success('초기화가 취소되었습니다');
+  };
+
+  const handleResetAll = () => {
+    resetSnapshotRef.current = items.map(i => ({ id: i.id, stock: i.stock }));
+    setItems(prev => prev.map(i => ({ ...i, stock: 0 })));
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    toast('전체 카운터 재고를 초기화했습니다', {
+      duration: 15000,
+      action: {
+        label: '실행취소',
+        onClick: handleUndoReset,
+      },
+    });
+    undoTimerRef.current = setTimeout(async () => {
+      const res = await fetch('/api/items/reset', { method: 'POST' });
+      if (!res.ok) {
+        const snapshot = resetSnapshotRef.current;
+        setItems(prev => prev.map(i => {
+          const snap = snapshot.find(s => s.id === i.id);
+          return snap ? { ...i, stock: snap.stock } : i;
+        }));
+        toast.error('초기화 실패. 다시 시도해주세요.');
+      } else {
+        fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            itemName: '전체 카운터 초기화',
+            field: 'bulk_reset',
+            oldValue: resetSnapshotRef.current.filter(s => s.stock > 0).length,
+            newValue: 0,
+            user: user?.name ?? '비로그인',
+          }),
+        }).catch(() => {});
+      }
+      resetSnapshotRef.current = [];
+      undoTimerRef.current = null;
+    }, 15000);
+  };
+
   const handleAdd = async (name: string, minQty: string, expiryDate?: string) => {
     await fetch('/api/items', {
       method: 'POST',
@@ -392,25 +458,34 @@ export default function Home() {
         {user && (
           <div className="p-4 border-t border-pink-50 flex gap-2">
             {!reorderMode ? (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}
-                  className="flex-1 border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600">
-                  + {activeCategory} 품목 추가
-                </Button>
+              <div className="flex flex-col gap-2 w-full">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}
+                    className="flex-1 border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600">
+                    + {activeCategory} 품목 추가
+                  </Button>
+                  <Button
+                    variant="outline" size="sm"
+                    onClick={() => setMinEditMode(v => !v)}
+                    className={minEditMode
+                      ? 'border-pink-400 bg-pink-50 text-pink-600 hover:bg-pink-100'
+                      : 'border-pink-200 text-pink-500 hover:bg-pink-50'}
+                  >
+                    {minEditMode ? '수정완료' : '최소수량'}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleReorderStart}
+                    className="border-pink-200 text-pink-500 hover:bg-pink-50">
+                    위치변경
+                  </Button>
+                </div>
                 <Button
                   variant="outline" size="sm"
-                  onClick={() => setMinEditMode(v => !v)}
-                  className={minEditMode
-                    ? 'border-pink-400 bg-pink-50 text-pink-600 hover:bg-pink-100'
-                    : 'border-pink-200 text-pink-500 hover:bg-pink-50'}
+                  onClick={() => setShowResetConfirm(true)}
+                  className="w-full border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 text-xs"
                 >
-                  {minEditMode ? '수정완료' : '최소수량'}
+                  전체 카운터 재고 초기화
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleReorderStart}
-                  className="border-pink-200 text-pink-500 hover:bg-pink-50">
-                  위치변경
-                </Button>
-              </>
+              </div>
             ) : (
               <Button size="sm" onClick={handleReorderSave}
                 className="flex-1 bg-pink-500 hover:bg-pink-600 text-white">
@@ -483,6 +558,31 @@ export default function Home() {
           })}
         </div>
       </div>
+
+      {/* 전체 초기화 확인 다이얼로그 */}
+      <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>전체 카운터 재고 초기화</DialogTitle>
+            <DialogDescription>
+              모든 카테고리의 카운터 재고를 0으로 초기화합니다.
+              실행 후 15초 안에 실행취소할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" size="sm" />}>
+              취소
+            </DialogClose>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => { handleResetAll(); setShowResetConfirm(false); }}
+            >
+              초기화
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 모달들 */}
       <AddItemModal open={showAddItem} category={activeCategory}
