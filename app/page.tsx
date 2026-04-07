@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import StockLogModal from '@/components/StockLogModal';
-import { Item, Category, CATEGORIES, CafeUser, getStockStatus } from '@/types';
+import { Item, Category, CafeUser, getStockStatus, CATEGORIES } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
 import CategoryTabs from '@/components/CategoryTabs';
 import ItemRow from '@/components/ItemRow';
@@ -10,6 +10,7 @@ import SortableItemRow from '@/components/SortableItemRow';
 import AddItemModal from '@/components/AddItemModal';
 import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
+import MenuDrawer from '@/components/MenuDrawer';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -75,6 +76,7 @@ export default function Home() {
   const searchRef = useRef<HTMLDivElement>(null);
   const [showLogModal, setShowLogModal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
   const resetSnapshotRef = useRef<{ id: string; stock: number }[]>([]);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleClickCount = useRef(0);
@@ -310,12 +312,12 @@ export default function Home() {
     }, 15000);
   };
 
-  const handleAdd = async (name: string, minQty: string, expiryDate?: string) => {
+  const handleAdd = async (category: Category, name: string, minQty: string, expiryDate?: string) => {
     await fetch('/api/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        category: activeCategory,
+        category,
         name,
         min_qty: minQty,
         stock: 0,
@@ -336,30 +338,15 @@ export default function Home() {
           </h1>
           <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
         </div>
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <span className="text-xs text-pink-500 bg-pink-50 border border-pink-200 px-3 py-1.5 rounded-full">
-                {user.name} · {user.role === 'owner' ? '오너' : '매니저'}
-              </span>
-              {user.role === 'owner' && (
-                <Button variant="outline" size="sm" onClick={() => setShowChangePw(true)}
-                  className="border-pink-200 text-pink-600 hover:bg-pink-50 text-xs">
-                  비밀번호 변경
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={() => { clearSession(); setUser(null); }}
-                className="border-pink-200 text-pink-600 hover:bg-pink-50 text-xs">
-                로그아웃
-              </Button>
-            </>
-          ) : (
-            <Button size="sm" onClick={() => setShowLogin(true)}
-              className="bg-pink-500 hover:bg-pink-600 text-white text-xs">
-              로그인
-            </Button>
-          )}
-        </div>
+        <button
+          onClick={() => setShowDrawer(true)}
+          className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 active:bg-pink-100 transition-colors"
+          aria-label="메뉴 열기"
+        >
+          <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
+          <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
+          <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
+        </button>
       </div>
 
       {/* 검색 */}
@@ -455,43 +442,12 @@ export default function Home() {
           </DndContext>
           </div>
         )}
-        {user && (
-          <div className="p-4 border-t border-pink-50 flex gap-2">
-            {!reorderMode ? (
-              <div className="flex flex-col gap-2 w-full">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}
-                    className="flex-1 border-dashed border-pink-300 text-pink-500 hover:bg-pink-50 hover:text-pink-600">
-                    + {activeCategory} 품목 추가
-                  </Button>
-                  <Button
-                    variant="outline" size="sm"
-                    onClick={() => setMinEditMode(v => !v)}
-                    className={minEditMode
-                      ? 'border-pink-400 bg-pink-50 text-pink-600 hover:bg-pink-100'
-                      : 'border-pink-200 text-pink-500 hover:bg-pink-50'}
-                  >
-                    {minEditMode ? '수정완료' : '최소수량'}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleReorderStart}
-                    className="border-pink-200 text-pink-500 hover:bg-pink-50">
-                    위치변경
-                  </Button>
-                </div>
-                <Button
-                  variant="outline" size="sm"
-                  onClick={() => setShowResetConfirm(true)}
-                  className="w-full border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 text-xs"
-                >
-                  전체 카운터 재고 초기화
-                </Button>
-              </div>
-            ) : (
-              <Button size="sm" onClick={handleReorderSave}
-                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white">
-                저장
-              </Button>
-            )}
+        {reorderMode && (
+          <div className="p-4 border-t border-pink-50">
+            <Button size="sm" onClick={handleReorderSave}
+              className="w-full bg-pink-500 hover:bg-pink-600 text-white">
+              위치변경 저장
+            </Button>
           </div>
         )}
       </div>
@@ -584,8 +540,26 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
+      {/* 드로어 */}
+      <MenuDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        user={user}
+        activeCategory={activeCategory}
+        minEditMode={minEditMode}
+        reorderMode={reorderMode}
+        onAddItem={() => setShowAddItem(true)}
+        onToggleMinEdit={() => setMinEditMode(v => !v)}
+        onReorderStart={handleReorderStart}
+        onReorderSave={handleReorderSave}
+        onResetConfirm={() => setShowResetConfirm(true)}
+        onChangePw={() => setShowChangePw(true)}
+        onLogout={() => { clearSession(); setUser(null); }}
+        onLogin={() => setShowLogin(true)}
+      />
+
       {/* 모달들 */}
-      <AddItemModal open={showAddItem} category={activeCategory}
+      <AddItemModal open={showAddItem} initialCategory={activeCategory}
         onClose={() => setShowAddItem(false)} onAdd={handleAdd} />
       <LoginModal open={showLogin}
         onSuccess={u => { saveSession(u); setUser(u); setShowLogin(false); }}
