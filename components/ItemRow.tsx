@@ -244,7 +244,6 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
       <td className="px-2 sm:px-4 py-3 text-sm font-medium text-gray-800 max-w-[130px] sm:max-w-none">
         <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0">
           <span className="truncate sm:whitespace-nowrap">{item.name}</span>
-          <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">{unit}</span>
 
           {/* 가격비교 버튼 (product_name 있을 때) */}
           {item.product_name && (

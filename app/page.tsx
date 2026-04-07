@@ -37,7 +37,7 @@ const CATEGORY_OFFSETS: Record<Category, number> = {
   '시럽': 1000,
   '이외품목': 2000,
   '베이커리': 3000,
-  '오믈렛및마카롱': 4000,
+  '오믈렛 및 마카롱': 4000,
   '도쿄롤': 5000,
   '케익': 6000,
 };
@@ -96,7 +96,7 @@ export default function Home() {
   }, [fetchItems]);
 
   const categoryItems = items.filter(i => i.category === activeCategory);
-  const showExpiry = ['오믈렛및마카롱', '도쿄롤', '케익'].includes(activeCategory);
+  const showExpiry = ['오믈렛 및 마카롱', '도쿄롤', '케익'].includes(activeCategory);
   const sortedItems = reorderMode ? reorderItems : categoryItems;
 
   const sensors = useSensors(

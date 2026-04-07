@@ -12,7 +12,7 @@ interface Props {
   onAdd: (category: Category, name: string, unit: Unit, minQty: string, initialStock: number, expiryDate?: string) => void;
 }
 
-const HAS_EXPIRY: Category[] = ['오믈렛및마카롱', '도쿄롤', '케익'];
+const HAS_EXPIRY: Category[] = ['오믈렛 및 마카롱', '도쿄롤', '케익'];
 
 const UNIT_DESC: Record<Unit, string> = {
   '개': '낱개',
