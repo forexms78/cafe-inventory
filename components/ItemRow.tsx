@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Item, CafeUser, getStockStatus } from '@/types';
+import { Item, CafeUser, getStockStatus, Unit } from '@/types';
 import { Button } from '@/components/ui/button';
 import PriceCompareModal from '@/components/PriceCompareModal';
 import ExpiryModal from '@/components/ExpiryModal';
@@ -48,11 +48,13 @@ const StockCell = forwardRef<StockCellRef, {
   itemId: string;
   colorClass: string;
   canEdit: boolean;
-  isPercent?: boolean;
+  unit?: Unit;
   onStockChange: (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => void;
   onEnterKey?: () => void;
   onTabKey?: () => void;
-}>(function StockCell({ value, field, itemId, colorClass, canEdit, isPercent, onStockChange, onEnterKey, onTabKey }, ref) {
+}>(function StockCell({ value, field, itemId, colorClass, canEdit, unit, onStockChange, onEnterKey, onTabKey }, ref) {
+  const isPercent = unit === '%';
+  const maxVal = isPercent ? 100 : Infinity;
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,7 +99,7 @@ const StockCell = forwardRef<StockCellRef, {
     // 400ms 딜레이 후 빠른 반복 시작
     const timeout = setTimeout(() => {
       intervalRef.current = setInterval(() => {
-        const next = Math.max(0, valueRef.current + delta);
+        const next = Math.min(maxVal, Math.max(0, valueRef.current + delta));
         onStockChange(itemId, field, next);
       }, 150);
     }, 400);
@@ -146,13 +148,14 @@ const StockCell = forwardRef<StockCellRef, {
         </button>
       )}
       <button
-        onClick={() => onStockChange(itemId, field, value + 1)}
+        onClick={() => onStockChange(itemId, field, Math.min(maxVal, value + 1))}
         onMouseDown={() => startLongPress(1)}
         onMouseUp={stopLongPress}
         onMouseLeave={stopLongPress}
         onTouchStart={() => startLongPress(1)}
         onTouchEnd={stopLongPress}
-        className="w-6 h-6 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 font-bold text-sm leading-none transition-colors flex-shrink-0 select-none"
+        disabled={value >= maxVal}
+        className="w-6 h-6 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-sm leading-none transition-colors flex-shrink-0 select-none"
       >
         +
       </button>
@@ -166,7 +169,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
 ) {
   const status = getStockStatus(item);
   const canEdit = !!user;
-  const isPercent = item.min_qty.includes('%');
+  const unit = item.unit ?? '개';
 
   const stockRef = useRef<StockCellRef>(null);
   const pantryRef = useRef<StockCellRef>(null);
@@ -241,6 +244,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
       <td className="px-2 sm:px-4 py-3 text-sm font-medium text-gray-800 max-w-[130px] sm:max-w-none">
         <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0">
           <span className="truncate sm:whitespace-nowrap">{item.name}</span>
+          <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">{unit}</span>
 
           {/* 가격비교 버튼 (product_name 있을 때) */}
           {item.product_name && (
@@ -311,7 +315,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
           itemId={item.id}
           colorClass={STOCK_COLORS[status]}
           canEdit={canEdit}
-          isPercent={isPercent}
+          unit={unit}
           onStockChange={onStockChange}
           onEnterKey={() => pantryRef.current?.startEditing()}
           onTabKey={() => pantryRef.current?.startEditing()}

@@ -2,10 +2,14 @@ export type Category = '파우더' | '시럽' | '이외품목' | '베이커리' 
 
 export const CATEGORIES: Category[] = ['파우더', '시럽', '이외품목', '베이커리', '오믈렛및마카롱', '도쿄롤', '케익'];
 
+export type Unit = '개' | '박스' | '봉' | '병' | '%';
+export const UNITS: Unit[] = ['개', '박스', '봉', '병', '%'];
+
 export interface Item {
   id: string;
   category: Category;
   name: string;
+  unit: Unit;
   min_qty: string;
   stock: number;
   pantry_stock?: number | null;

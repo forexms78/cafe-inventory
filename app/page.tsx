@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import StockLogModal from '@/components/StockLogModal';
-import { Item, Category, CafeUser, getStockStatus, CATEGORIES } from '@/types';
+import { Item, Category, Unit, CafeUser, getStockStatus, CATEGORIES } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
 import CategoryTabs from '@/components/CategoryTabs';
 import ItemRow from '@/components/ItemRow';
@@ -312,13 +312,14 @@ export default function Home() {
     }, 15000);
   };
 
-  const handleAdd = async (category: Category, name: string, minQty: string, initialStock: number, expiryDate?: string) => {
+  const handleAdd = async (category: Category, name: string, unit: Unit, minQty: string, initialStock: number, expiryDate?: string) => {
     await fetch('/api/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         category,
         name,
+        unit,
         min_qty: minQty,
         stock: initialStock,
         expiry_date: expiryDate ?? null,
