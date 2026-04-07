@@ -11,6 +11,7 @@ import AddItemModal from '@/components/AddItemModal';
 import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import MenuDrawer from '@/components/MenuDrawer';
+import ThemeButton from '@/components/ThemeButton';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -333,12 +334,14 @@ export default function Home() {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>
+          <h1 className="text-4xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
             재고 관
             <span onClick={handleTitleClick} className="cursor-default select-none">리</span>
           </h1>
           <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
         </div>
+        <div className="flex items-center gap-2">
+        <ThemeButton />
         <button
           onClick={() => setShowDrawer(true)}
           className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 active:bg-pink-100 transition-colors"
@@ -348,6 +351,7 @@ export default function Home() {
           <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
           <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
         </button>
+        </div>
       </div>
 
       {/* 검색 */}

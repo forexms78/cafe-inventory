@@ -128,3 +128,210 @@
     @apply font-sans;
   }
 }
+
+/* ============================================================
+   THEME: INSTAGRAM PINK  (data-theme="pink")
+   흰 배경 + 비비드 핑크/로즈 그라디언트
+   ============================================================ */
+
+html[data-theme="pink"] body {
+  background-color: #fafafa;
+}
+
+/* 타이틀 그라디언트 */
+html[data-theme="pink"] .theme-title {
+  background: linear-gradient(135deg, #e1306c 0%, #c13584 50%, #833ab4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 활성 카테고리 탭 그라디언트 */
+html[data-theme="pink"] .bg-pink-500 {
+  background: linear-gradient(135deg, #e1306c 0%, #c13584 100%);
+  box-shadow: 0 2px 8px rgba(193, 53, 132, 0.35);
+}
+
+/* 카드 그림자 강화 */
+html[data-theme="pink"] .shadow-sm {
+  box-shadow: 0 4px 24px rgba(225, 48, 108, 0.1), 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 테이블 헤더 */
+html[data-theme="pink"] .bg-pink-50\/70 {
+  background-color: #fff0f7;
+}
+
+/* ============================================================
+   THEME: DARK  (data-theme="dark")
+   딥 네이비 + 핑크 포인트
+   ============================================================ */
+
+html[data-theme="dark"] body {
+  background-color: #0d0d18;
+  color: #e4e0ff;
+}
+
+/* 패턴 오버레이 어둡게 */
+html[data-theme="dark"] body > div[style*="bg-pattern"] {
+  opacity: 0.03;
+}
+
+/* === 배경색 === */
+html[data-theme="dark"] .bg-white {
+  background-color: #16162a;
+}
+
+html[data-theme="dark"] .bg-pink-50\/70 {
+  background-color: #1c1c34;
+}
+
+html[data-theme="dark"] .bg-pink-50 {
+  background-color: #1c1c34;
+}
+
+html[data-theme="dark"] .bg-pink-100 {
+  background-color: #252550;
+}
+
+html[data-theme="dark"] .bg-gray-100 {
+  background-color: #252550;
+}
+
+/* 행 상태 색상 */
+html[data-theme="dark"] .bg-red-50 {
+  background-color: #2a1218;
+}
+
+html[data-theme="dark"] .bg-yellow-50 {
+  background-color: #251e10;
+}
+
+/* === 텍스트 === */
+html[data-theme="dark"] .text-gray-800 {
+  color: #e4e0ff;
+}
+
+html[data-theme="dark"] .text-gray-700 {
+  color: #c8c4f0;
+}
+
+html[data-theme="dark"] .text-gray-400 {
+  color: #8880b8;
+}
+
+html[data-theme="dark"] .text-gray-300 {
+  color: #6660a0;
+}
+
+html[data-theme="dark"] .text-pink-700 {
+  color: #f4a0cc;
+}
+
+html[data-theme="dark"] .text-pink-600 {
+  color: #f472b6;
+}
+
+html[data-theme="dark"] .text-pink-500 {
+  color: #f472b6;
+}
+
+html[data-theme="dark"] .text-pink-400 {
+  color: #f4a0cc;
+}
+
+html[data-theme="dark"] .text-pink-300 {
+  color: #fbcfe8;
+}
+
+html[data-theme="dark"] .text-pink-200 {
+  color: #fce7f3;
+}
+
+/* === 보더 === */
+html[data-theme="dark"] .border-pink-100 {
+  border-color: rgba(244, 114, 182, 0.14);
+}
+
+html[data-theme="dark"] .border-pink-200 {
+  border-color: rgba(244, 114, 182, 0.2);
+}
+
+html[data-theme="dark"] .border-pink-50 {
+  border-color: rgba(244, 114, 182, 0.08);
+}
+
+/* row divider */
+html[data-theme="dark"] .divide-pink-50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(244, 114, 182, 0.08);
+}
+
+/* === 인풋 === */
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="password"],
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] input:not([type]) {
+  background-color: #1c1c34;
+  color: #e4e0ff;
+}
+
+html[data-theme="dark"] input::placeholder {
+  color: rgba(244, 114, 182, 0.3);
+}
+
+/* === 호버 상태 === */
+html[data-theme="dark"] .hover\:bg-pink-50:hover {
+  background-color: #252550;
+}
+
+html[data-theme="dark"] .hover\:bg-pink-100:hover {
+  background-color: #2e2e5e;
+}
+
+/* === 테마 버튼 자체 === */
+html[data-theme="dark"] .theme-button-wrap {
+  background-color: #16162a;
+  border-color: rgba(244, 114, 182, 0.2);
+}
+
+html[data-theme="dark"] .theme-button-wrap .bg-pink-100 {
+  background-color: #252550;
+}
+
+/* === 드로어 === */
+html[data-theme="dark"] .shadow-2xl {
+  box-shadow: -4px 0 32px rgba(0, 0, 0, 0.6);
+}
+
+/* === 메뉴 버튼 (햄버거) === */
+html[data-theme="dark"] .bg-pink-400 {
+  background-color: #f472b6;
+}
+
+/* === 활성 탭 유지 (pink-500) — 다크에서도 핑크 유지 === */
+html[data-theme="dark"] .bg-pink-500 {
+  background-color: #db2777;
+}
+
+/* === 위험/경고 텍스트는 유지 === */
+html[data-theme="dark"] .text-red-600,
+html[data-theme="dark"] .text-yellow-600,
+html[data-theme="dark"] .text-emerald-600 {
+  /* 상태 색상은 유지 */
+}
+
+html[data-theme="dark"] .bg-red-100 {
+  background-color: #2a1218;
+}
+
+html[data-theme="dark"] .bg-yellow-100 {
+  background-color: #251e10;
+}
+
+html[data-theme="dark"] .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+html[data-theme="dark"] .border-yellow-200 {
+  border-color: rgba(234, 179, 8, 0.3);
+}

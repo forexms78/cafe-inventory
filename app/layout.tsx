@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Jua, Noto_Sans_KR } from "next/font/google";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const jua = Jua({
@@ -40,7 +41,9 @@ export default function RootLayout({
             opacity: 0.07,
           }}
         />
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Toaster position="bottom-center" richColors />
       </body>
     </html>
