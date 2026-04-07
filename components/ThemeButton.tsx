@@ -2,9 +2,8 @@
 import { useTheme, Theme } from './ThemeProvider';
 
 const THEMES: { id: Theme; icon: string; label: string }[] = [
-  { id: 'default', icon: '🌸', label: '기본' },
-  { id: 'pink',    icon: '💗', label: '핑크' },
-  { id: 'dark',    icon: '🌙', label: '다크' },
+  { id: 'pink', icon: '💗', label: '핑크' },
+  { id: 'dark', icon: '🌙', label: '다크' },
 ];
 
 export default function ThemeButton() {

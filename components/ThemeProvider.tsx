@@ -1,22 +1,21 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'default' | 'pink' | 'dark';
+export type Theme = 'pink' | 'dark';
 
 const ThemeContext = createContext<{
   theme: Theme;
   setTheme: (t: Theme) => void;
-}>({ theme: 'default', setTheme: () => {} });
+}>({ theme: 'pink', setTheme: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('default');
+  const [theme, setThemeState] = useState<Theme>('pink');
 
   useEffect(() => {
     const saved = localStorage.getItem('cafe-theme') as Theme | null;
-    if (saved && ['default', 'pink', 'dark'].includes(saved)) {
-      setThemeState(saved);
-      document.documentElement.setAttribute('data-theme', saved);
-    }
+    const valid: Theme = (saved === 'pink' || saved === 'dark') ? saved : 'pink';
+    setThemeState(valid);
+    document.documentElement.setAttribute('data-theme', valid);
   }, []);
 
   const setTheme = (t: Theme) => {

@@ -130,11 +130,12 @@
 }
 
 /* ============================================================
-   THEME: INSTAGRAM PINK  (data-theme="pink")
+   THEME: INSTAGRAM PINK  (data-theme="pink") — 기본 테마
    흰 배경 + 비비드 핑크/로즈 그라디언트
    ============================================================ */
 
-html[data-theme="pink"] body {
+html[data-theme="pink"] body,
+:root body {
   background-color: #fafafa;
 }
 
