@@ -312,7 +312,7 @@ export default function Home() {
     }, 15000);
   };
 
-  const handleAdd = async (category: Category, name: string, minQty: string, expiryDate?: string) => {
+  const handleAdd = async (category: Category, name: string, minQty: string, initialStock: number, expiryDate?: string) => {
     await fetch('/api/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -320,7 +320,7 @@ export default function Home() {
         category,
         name,
         min_qty: minQty,
-        stock: 0,
+        stock: initialStock,
         expiry_date: expiryDate ?? null,
       }),
     });

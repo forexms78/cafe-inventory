@@ -9,7 +9,7 @@ interface Props {
   open: boolean;
   initialCategory: Category;
   onClose: () => void;
-  onAdd: (category: Category, name: string, minQty: string, expiryDate?: string) => void;
+  onAdd: (category: Category, name: string, minQty: string, initialStock: number, expiryDate?: string) => void;
 }
 
 const HAS_EXPIRY: Category[] = ['오믈렛및마카롱', '도쿄롤', '케익'];
@@ -17,7 +17,8 @@ const HAS_EXPIRY: Category[] = ['오믈렛및마카롱', '도쿄롤', '케익'];
 export default function AddItemModal({ open, initialCategory, onClose, onAdd }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<Category>(initialCategory);
   const [name, setName] = useState('');
-  const [minQty, setMinQty] = useState('1');
+  const [minQty, setMinQty] = useState('');
+  const [initialStock, setInitialStock] = useState('');
   const [expiry, setExpiry] = useState('');
 
   useEffect(() => {
@@ -28,8 +29,14 @@ export default function AddItemModal({ open, initialCategory, onClose, onAdd }: 
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    onAdd(selectedCategory, name.trim(), minQty || '1', hasExpiry && expiry ? expiry : undefined);
-    setName(''); setMinQty('1'); setExpiry('');
+    onAdd(
+      selectedCategory,
+      name.trim(),
+      minQty || '0',
+      parseInt(initialStock) || 0,
+      hasExpiry && expiry ? expiry : undefined,
+    );
+    setName(''); setMinQty(''); setInitialStock(''); setExpiry('');
     onClose();
   };
 
@@ -39,7 +46,7 @@ export default function AddItemModal({ open, initialCategory, onClose, onAdd }: 
         <DialogHeader>
           <DialogTitle className="text-pink-700">품목 추가</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 pt-2">
+        <div className="space-y-4 pt-2">
           {/* 카테고리 선택 */}
           <div>
             <p className="text-xs text-pink-400 mb-2 font-medium">카테고리</p>
@@ -60,28 +67,56 @@ export default function AddItemModal({ open, initialCategory, onClose, onAdd }: 
             </div>
           </div>
 
-          <Input
-            placeholder="품목명"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            className="border-pink-200 focus:border-pink-400"
-            autoFocus
-          />
-          <Input
-            placeholder="최소 수량 (예: 2, 1box, 절반)"
-            value={minQty}
-            onChange={e => setMinQty(e.target.value)}
-            className="border-pink-200 focus:border-pink-400"
-          />
-          {hasExpiry && (
+          {/* 품목명 */}
+          <div>
+            <p className="text-xs text-pink-400 mb-1.5 font-medium">품목명</p>
             <Input
-              placeholder="유통기한 (예: 260801)"
-              value={expiry}
-              onChange={e => setExpiry(e.target.value)}
+              placeholder="예) 바닐라 파우더"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleAdd()}
               className="border-pink-200 focus:border-pink-400"
+              autoFocus
             />
+          </div>
+
+          {/* 최소 수량 + 초기 재고 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-pink-400 mb-1.5 font-medium">최소 수량</p>
+              <Input
+                placeholder="예) 2, 1box"
+                value={minQty}
+                onChange={e => setMinQty(e.target.value)}
+                className="border-pink-200 focus:border-pink-400"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-pink-400 mb-1.5 font-medium">초기 재고</p>
+              <Input
+                type="number"
+                min={0}
+                placeholder="0"
+                value={initialStock}
+                onChange={e => setInitialStock(e.target.value)}
+                className="border-pink-200 focus:border-pink-400"
+              />
+            </div>
+          </div>
+
+          {/* 유통기한 (해당 카테고리만) */}
+          {hasExpiry && (
+            <div>
+              <p className="text-xs text-pink-400 mb-1.5 font-medium">유통기한</p>
+              <Input
+                placeholder="예) 260801"
+                value={expiry}
+                onChange={e => setExpiry(e.target.value)}
+                className="border-pink-200 focus:border-pink-400"
+              />
+            </div>
           )}
+
           <Button
             className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded-xl h-11"
             onClick={handleAdd}

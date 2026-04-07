@@ -40,15 +40,15 @@ export default function MenuDrawer({
   }, [open]);
 
   const MenuItem = ({
-    icon, label, onClick, danger, active, disabled,
+    label, onClick, danger, active, disabled,
   }: {
-    icon: string; label: string; onClick: () => void;
+    label: string; onClick: () => void;
     danger?: boolean; active?: boolean; disabled?: boolean;
   }) => (
     <button
       onClick={() => { if (!disabled) { onClick(); onClose(); } }}
       disabled={disabled}
-      className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl transition-colors text-left
+      className={`w-full flex items-center px-4 py-3.5 text-sm font-medium rounded-xl transition-colors text-left
         ${danger
           ? 'text-red-500 hover:bg-red-50 active:bg-red-100'
           : active
@@ -58,7 +58,6 @@ export default function MenuDrawer({
         ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
       `}
     >
-      <span className="text-lg leading-none">{icon}</span>
       <span>{label}</span>
       {active && <span className="ml-auto text-xs bg-pink-200 text-pink-700 px-2 py-0.5 rounded-full">ON</span>}
     </button>
@@ -117,54 +116,35 @@ export default function MenuDrawer({
             <>
               {/* 재고 관리 그룹 */}
               <p className="text-xs text-pink-300 font-semibold px-1 pb-1 pt-1 uppercase tracking-wider">재고 관리</p>
+              <MenuItem label="품목 추가" onClick={onAddItem} />
               <MenuItem
-                icon="➕"
-                label="품목 추가"
-                onClick={onAddItem}
-              />
-              <MenuItem
-                icon="✏️"
                 label={minEditMode ? '최소수량 수정 완료' : '최소수량 수정'}
                 onClick={onToggleMinEdit}
                 active={minEditMode}
               />
               {reorderMode ? (
-                <MenuItem
-                  icon="💾"
-                  label="위치변경 저장"
-                  onClick={onReorderSave}
-                  active
-                />
+                <MenuItem label="위치변경 저장" onClick={onReorderSave} active />
               ) : (
-                <MenuItem
-                  icon="↕️"
-                  label="위치변경"
-                  onClick={onReorderStart}
-                />
+                <MenuItem label="위치변경" onClick={onReorderStart} />
               )}
 
               <div className="h-px bg-pink-50 my-2" />
 
               {/* 위험 액션 */}
               <p className="text-xs text-pink-300 font-semibold px-1 pb-1 uppercase tracking-wider">위험 구역</p>
-              <MenuItem
-                icon="🔄"
-                label="카운터 재고 초기화"
-                onClick={onResetConfirm}
-                danger
-              />
+              <MenuItem label="카운터 재고 초기화" onClick={onResetConfirm} danger />
 
               <div className="h-px bg-pink-50 my-2" />
 
               {/* 계정 */}
               <p className="text-xs text-pink-300 font-semibold px-1 pb-1 uppercase tracking-wider">계정</p>
               {user.role === 'owner' && (
-                <MenuItem icon="🔑" label="비밀번호 변경" onClick={onChangePw} />
+                <MenuItem label="비밀번호 변경" onClick={onChangePw} />
               )}
-              <MenuItem icon="🚪" label="로그아웃" onClick={onLogout} />
+              <MenuItem label="로그아웃" onClick={onLogout} />
             </>
           ) : (
-            <MenuItem icon="🔐" label="로그인" onClick={onLogin} />
+            <MenuItem label="로그인" onClick={onLogin} />
           )}
         </div>
 
