@@ -337,6 +337,30 @@ html[data-theme="dark"] .border-yellow-200 {
   border-color: rgba(234, 179, 8, 0.3);
 }
 
+/* === 메뉴 드로어 / 모달 공통 === */
+
+/* danger 버튼 hover */
+html[data-theme="dark"] .hover\:bg-red-50:hover {
+  background-color: #2a1218;
+}
+
+html[data-theme="dark"] .active\:bg-red-100:active {
+  background-color: #3a1820;
+}
+
+/* 단위 버튼 비활성 텍스트/보더 */
+html[data-theme="dark"] .text-gray-600 {
+  color: #b0acd8;
+}
+
+html[data-theme="dark"] .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .hover\:border-pink-200:hover {
+  border-color: rgba(244, 114, 182, 0.3);
+}
+
 /* === 재고 부족 알림 섹션 === */
 
 /* 카테고리 헤더 배경 (bg-pink-50/50) */
