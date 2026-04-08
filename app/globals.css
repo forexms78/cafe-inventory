@@ -336,3 +336,43 @@ html[data-theme="dark"] .border-red-200 {
 html[data-theme="dark"] .border-yellow-200 {
   border-color: rgba(234, 179, 8, 0.3);
 }
+
+/* === 재고 부족 알림 섹션 === */
+
+/* 카테고리 헤더 배경 (bg-pink-50/50) */
+html[data-theme="dark"] .bg-pink-50\/50 {
+  background-color: #1c1c34;
+}
+
+/* 위험 행 배경 (bg-red-50/40) */
+html[data-theme="dark"] .bg-red-50\/40 {
+  background-color: rgba(42, 18, 24, 0.8);
+}
+
+/* 경고 행 배경 (bg-yellow-50/40) */
+html[data-theme="dark"] .bg-yellow-50\/40 {
+  background-color: rgba(37, 30, 16, 0.8);
+}
+
+/* 위험 행 호버 (hover:bg-red-100/60) */
+html[data-theme="dark"] .hover\:bg-red-100\/60:hover {
+  background-color: rgba(58, 22, 30, 0.9);
+}
+
+/* 경고 행 호버 (hover:bg-yellow-100/60) */
+html[data-theme="dark"] .hover\:bg-yellow-100\/60:hover {
+  background-color: rgba(55, 44, 18, 0.9);
+}
+
+/* 정상 배지 */
+html[data-theme="dark"] .bg-emerald-50 {
+  background-color: #0d2318;
+}
+
+html[data-theme="dark"] .border-emerald-200 {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+html[data-theme="dark"] .text-emerald-500 {
+  color: #34d399;
+}
