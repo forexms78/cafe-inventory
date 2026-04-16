@@ -6,12 +6,14 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const limitParam = req.nextUrl.searchParams.get('limit');
+  const limit = Math.min(parseInt(limitParam ?? '200', 10), 1000);
   const { data, error } = await supabase
     .from('stock_logs')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(200);
+    .limit(limit);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Category } from '@/types';
 import { CafeUser } from '@/types';
 
@@ -26,6 +27,8 @@ export default function MenuDrawer({
   onAddItem, onToggleMinEdit, onReorderStart, onReorderSave,
   onResetConfirm, onChangePw, onLogout, onLogin,
 }: Props) {
+  const router = useRouter();
+
   // ESC 키로 닫기
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -127,6 +130,8 @@ export default function MenuDrawer({
               ) : (
                 <MenuItem label="위치변경" onClick={onReorderStart} />
               )}
+
+              <MenuItem label="변경 로그" onClick={() => router.push('/logs')} />
 
               <div className="h-px bg-pink-50 my-2" />
 

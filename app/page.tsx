@@ -205,30 +205,51 @@ export default function Home() {
   const handleStockChange = async (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => {
     const prev = items.find(i => i.id === id)?.[field] ?? 0;
     setItems(current => current.map(i => i.id === id ? { ...i, [field]: value } : i));
-    const res = await fetch('/api/items', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, [field]: value }),
-    });
-    if (!res.ok) {
+
+    const patchItem = async (): Promise<Item | null> => {
+      const res = await fetch('/api/items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, [field]: value }),
+      });
+      if (!res.ok) return null;
+      return res.json();
+    };
+
+    let saved = await patchItem();
+
+    if (!saved) {
       setItems(current => current.map(i => i.id === id ? { ...i, [field]: prev } : i));
       toast.error('저장 실패. 다시 시도해주세요.');
-    } else {
-      toast.success('저장됨', { id: 'stock-save' });
-      const itemName = items.find(i => i.id === id)?.name ?? id;
-      fetch('/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          timestamp: new Date().toISOString(),
-          itemName,
-          field,
-          oldValue: prev as number,
-          newValue: value,
-          user: user?.name ?? '비로그인',
-        }),
-      }).catch(() => {});
+      return;
     }
+
+    if (saved[field] !== value) {
+      // DB에 저장된 값이 의도한 값과 다름 → 1회 재시도
+      saved = await patchItem();
+      if (!saved || saved[field] !== value) {
+        // 재시도 후도 불일치 → DB 실제 값으로 UI 동기화 후 경고
+        const dbValue = saved ? saved[field] ?? prev : prev;
+        setItems(current => current.map(i => i.id === id ? { ...i, [field]: dbValue } : i));
+        toast.error('저장 오류가 발생했습니다. 새로고침 후 확인해주세요.');
+        return;
+      }
+    }
+
+    toast.success('저장됨', { id: 'stock-save' });
+    const itemName = items.find(i => i.id === id)?.name ?? id;
+    fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        itemName,
+        field,
+        oldValue: prev as number,
+        newValue: value,
+        user: user?.name ?? '비로그인',
+      }),
+    }).catch(() => {});
   };
 
   const handleProductNameChange = async (id: string, name: string | null) => {
