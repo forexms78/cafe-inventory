@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import StockLogModal from '@/components/StockLogModal';
 import { Item, Category, Unit, CafeUser, getStockStatus, CATEGORIES } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -75,13 +74,10 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [showLogModal, setShowLogModal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const resetSnapshotRef = useRef<{ id: string; stock: number }[]>([]);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const titleClickCount = useRef(0);
-  const titleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items');
@@ -153,19 +149,6 @@ export default function Home() {
       return updated.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     });
     setReorderMode(false);
-  };
-
-  const handleTitleClick = () => {
-    titleClickCount.current += 1;
-    if (titleClickTimer.current) clearTimeout(titleClickTimer.current);
-    if (titleClickCount.current >= 3) {
-      titleClickCount.current = 0;
-      setShowLogModal(true);
-    } else {
-      titleClickTimer.current = setTimeout(() => {
-        titleClickCount.current = 0;
-      }, 2000);
-    }
   };
 
   const searchResults = searchQuery.trim().length > 0
@@ -356,8 +339,7 @@ export default function Home() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-4xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
-            재고 관
-            <span onClick={handleTitleClick} className="cursor-default select-none">리</span>
+            재고관리
           </h1>
           <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
         </div>
@@ -591,7 +573,6 @@ export default function Home() {
         onSuccess={u => { saveSession(u); setUser(u); setShowLogin(false); }}
         onClose={() => setShowLogin(false)} />
       <ChangePasswordModal open={showChangePw} onClose={() => setShowChangePw(false)} />
-      <StockLogModal open={showLogModal} onClose={() => setShowLogModal(false)} />
     </main>
   );
 }
