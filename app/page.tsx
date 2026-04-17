@@ -12,6 +12,7 @@ import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import MenuDrawer from '@/components/MenuDrawer';
 import ThemeButton from '@/components/ThemeButton';
+import ExplosionOverlay from '@/components/ExplosionOverlay';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -79,6 +80,8 @@ export default function Home() {
   const [showDrawer, setShowDrawer] = useState(false);
   const resetSnapshotRef = useRef<{ id: string; stock: number }[]>([]);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [explosionPhase, setExplosionPhase] = useState<'idle' | 'exploding' | 'rebuilding'>('idle');
+  const [rebuildProgress, setRebuildProgress] = useState(0);
   const logPendingRef = useRef<Map<string, {
     originalOldValue: number;
     latestNewValue: number;
@@ -320,6 +323,57 @@ export default function Home() {
     fetchItems();
   };
 
+  const handleExplode = () => {
+    if (explosionPhase !== 'idle') return;
+    setExplosionPhase('exploding');
+
+    // 모든 폭발 대상 요소를 랜덤 방향으로 날림
+    const elements = document.querySelectorAll<HTMLElement>('[data-explodable]');
+    elements.forEach((el) => {
+      const x = (Math.random() - 0.5) * window.innerWidth * 2.5;
+      const y = (Math.random() - 0.5) * window.innerHeight * 2.5;
+      const rotate = (Math.random() - 0.5) * 1080;
+      const scale = Math.random() * 0.2;
+      el.style.transition = 'transform 0.9s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.7s ease-in';
+      el.style.transform = `translate(${x}px, ${y}px) rotate(${rotate}deg) scale(${scale})`;
+      el.style.opacity = '0';
+    });
+
+    // 1초 후 재건설 화면 표시
+    setTimeout(() => {
+      setExplosionPhase('rebuilding');
+      setRebuildProgress(0);
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        // 불규칙적인 공사 진행 — 가끔 멈추는 척
+        const increment = Math.random() * 4 + (progress > 80 ? 0.5 : 1.5);
+        progress = Math.min(100, progress + increment);
+        setRebuildProgress(progress);
+
+        if (progress >= 100) {
+          clearInterval(interval);
+
+          // 0.6초 후 원래 화면 복구
+          setTimeout(() => {
+            elements.forEach((el) => {
+              el.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
+              el.style.transform = '';
+              el.style.opacity = '';
+            });
+            setTimeout(() => {
+              elements.forEach((el) => {
+                el.style.transition = '';
+              });
+              setExplosionPhase('idle');
+              setRebuildProgress(0);
+            }, 500);
+          }, 600);
+        }
+      }, 60);
+    }, 1000);
+  };
+
   const handleUndoReset = () => {
     if (undoTimerRef.current) {
       clearTimeout(undoTimerRef.current);
@@ -392,8 +446,10 @@ export default function Home() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6 w-full">
+      <ExplosionOverlay visible={explosionPhase === 'rebuilding'} progress={rebuildProgress} />
+
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
+      <div data-explodable className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div>
             <h1 className="text-4xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
@@ -426,7 +482,7 @@ export default function Home() {
       </div>
 
       {/* 검색 */}
-      <div ref={searchRef} className="relative mb-4">
+      <div data-explodable ref={searchRef} className="relative mb-4">
         <input
           type="text"
           placeholder="품목 검색..."
@@ -452,10 +508,10 @@ export default function Home() {
       </div>
 
       {/* 카테고리 탭 */}
-      <CategoryTabs active={activeCategory} onChange={setActiveCategory} />
+      <div data-explodable><CategoryTabs active={activeCategory} onChange={setActiveCategory} /></div>
 
       {/* 재고 테이블 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden mb-8">
+      <div data-explodable className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden mb-8">
         {loading ? (
           <div className="py-16 text-center text-pink-300 text-sm">불러오는 중...</div>
         ) : (
@@ -529,7 +585,7 @@ export default function Home() {
       </div>
 
       {/* 재고 부족 알림 섹션 */}
-      <div>
+      <div data-explodable>
         <h2 className="text-lg font-bold text-pink-700 mb-3" style={{ fontFamily: 'var(--font-jua)' }}>
           재고 부족 알림
         </h2>
@@ -629,6 +685,7 @@ export default function Home() {
         onReorderStart={handleReorderStart}
         onReorderSave={handleReorderSave}
         onResetConfirm={() => setShowResetConfirm(true)}
+        onExplode={handleExplode}
         onChangePw={() => setShowChangePw(true)}
         onLogout={() => { clearSession(); setUser(null); }}
         onLogin={() => setShowLogin(true)}

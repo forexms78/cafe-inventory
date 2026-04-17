@@ -16,6 +16,7 @@ interface Props {
   onReorderStart: () => void;
   onReorderSave: () => void;
   onResetConfirm: () => void;
+  onExplode: () => void;
   onChangePw: () => void;
   onLogout: () => void;
   onLogin: () => void;
@@ -25,7 +26,7 @@ export default function MenuDrawer({
   open, onClose, user, activeCategory,
   minEditMode, reorderMode,
   onAddItem, onToggleMinEdit, onReorderStart, onReorderSave,
-  onResetConfirm, onChangePw, onLogout, onLogin,
+  onResetConfirm, onExplode, onChangePw, onLogout, onLogin,
 }: Props) {
   const router = useRouter();
 
@@ -140,6 +141,9 @@ export default function MenuDrawer({
               {/* 위험 액션 */}
               <p className="text-xs text-pink-300 font-semibold px-1 pb-1 uppercase tracking-wider">위험 구역</p>
               <MenuItem label="카운터 재고 초기화" onClick={onResetConfirm} danger />
+              {(user.role === 'owner' || user.role === 'developer') && (
+                <MenuItem label="폭파" onClick={onExplode} danger />
+              )}
 
               <div className="h-px bg-pink-50 my-2" />
 
