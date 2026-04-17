@@ -82,7 +82,7 @@ export default function Home() {
   const [showDrawer, setShowDrawer] = useState(false);
   const resetSnapshotRef = useRef<{ id: string; stock: number }[]>([]);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [explosionPhase, setExplosionPhase] = useState<'idle' | 'exploding' | 'rebuilding'>('idle');
+  const [explosionPhase, setExplosionPhase] = useState<'idle' | 'exploding' | 'stress' | 'rebuilding'>('idle');
   const [rebuildProgress, setRebuildProgress] = useState(0);
   const [explosionRects, setExplosionRects] = useState<{ x: number; y: number; width: number; height: number }[]>([]);
   const logPendingRef = useRef<Map<string, {
@@ -336,26 +336,31 @@ export default function Home() {
     playExplosionSound();
     setExplosionPhase('exploding');
 
-    // 1.2초 후 재건설 화면
+    // 1.1초 후 → 스트레스 메시지 3초 표시
     setTimeout(() => {
-      setExplosionPhase('rebuilding');
-      setRebuildProgress(0);
+      setExplosionPhase('stress');
 
-      let progress = 0;
-      const interval = setInterval(() => {
-        const increment = Math.random() * 4 + (progress > 80 ? 0.4 : 1.5);
-        progress = Math.min(100, progress + increment);
-        setRebuildProgress(progress);
+      // 3초 후 → 재건설
+      setTimeout(() => {
+        setExplosionPhase('rebuilding');
+        setRebuildProgress(0);
 
-        if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setExplosionPhase('idle');
-            setRebuildProgress(0);
-          }, 600);
-        }
-      }, 60);
-    }, 1200);
+        let progress = 0;
+        const interval = setInterval(() => {
+          const increment = Math.random() * 4 + (progress > 80 ? 0.4 : 1.5);
+          progress = Math.min(100, progress + increment);
+          setRebuildProgress(progress);
+
+          if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              setExplosionPhase('idle');
+              setRebuildProgress(0);
+            }, 600);
+          }
+        }, 60);
+      }, 3000);
+    }, 1100);
   };
 
   const handleUndoReset = () => {
@@ -430,9 +435,44 @@ export default function Home() {
 
   return (
     <>
-      {explosionPhase !== 'idle' && <ExplosionParticles rects={explosionRects} />}
+      {(explosionPhase === 'exploding') && <ExplosionParticles rects={explosionRects} />}
+      {explosionPhase === 'stress' && (
+        <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center select-none">
+          <style>{`
+            @keyframes stress-pop {
+              0%   { transform: scale(0.2) rotate(-8deg); opacity: 0; }
+              55%  { transform: scale(1.18) rotate(3deg); opacity: 1; }
+              75%  { transform: scale(0.94) rotate(-1deg); }
+              100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            }
+            @keyframes stress-sub {
+              0%   { transform: translateY(24px); opacity: 0; }
+              100% { transform: translateY(0); opacity: 1; }
+            }
+          `}</style>
+          <p
+            className="text-pink-400 text-5xl font-bold text-center leading-tight"
+            style={{ fontFamily: 'var(--font-jua)', animation: 'stress-pop 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
+          >
+            아가님<br/>스트레스 뿌셔!
+          </p>
+          <p
+            className="text-white text-2xl font-bold text-center mt-5"
+            style={{ fontFamily: 'var(--font-jua)', animation: 'stress-sub 0.4s ease-out 0.35s both' }}
+          >
+            오늘도 화이팅!
+          </p>
+        </div>
+      )}
       <ExplosionOverlay visible={explosionPhase === 'rebuilding'} progress={rebuildProgress} />
-    <main className={`max-w-4xl mx-auto px-4 py-6 w-full transition-opacity duration-100 ${explosionPhase !== 'idle' ? 'opacity-0 pointer-events-none' : ''}`}>
+    <main
+      className="max-w-4xl mx-auto px-4 py-6 w-full"
+      style={{
+        opacity: explosionPhase === 'idle' ? 1 : 0,
+        pointerEvents: explosionPhase !== 'idle' ? 'none' : undefined,
+        transition: explosionPhase === 'exploding' ? 'opacity 0.35s ease-out 0.1s' : 'none',
+      }}
+    >
 
       {/* 헤더 */}
       <div data-explodable className="flex items-center justify-between mb-6">

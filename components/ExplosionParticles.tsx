@@ -1,21 +1,22 @@
 'use client';
 import { useMemo } from 'react';
 
-// 섹션별 파편 색상 팔레트 (UI 색상 근사)
 const SECTION_COLORS = [
-  ['#fce7f3', '#fbcfe8', '#f9a8d4', '#ffffff', '#fff1f2'],
-  ['#fdf4ff', '#fce7f3', '#e9d5ff', '#ffffff', '#fdf2f8'],
-  ['#fff7ed', '#ffedd5', '#fed7aa', '#fdba74', '#ffffff'],
+  ['#fce7f3', '#fbcfe8', '#f9a8d4', '#f472b6', '#fff1f2'],
+  ['#fdf4ff', '#fce7f3', '#e9d5ff', '#c084fc', '#fdf2f8'],
+  ['#fff7ed', '#ffedd5', '#fed7aa', '#fb923c', '#fffbeb'],
   ['#fdf2f8', '#fce7f3', '#fbcfe8', '#f472b6', '#ffffff'],
-  ['#fff1f2', '#ffe4e6', '#fecaca', '#fca5a5', '#ffffff'],
+  ['#fff1f2', '#ffe4e6', '#fecaca', '#f87171', '#ffffff'],
+  ['#f0fdf4', '#dcfce7', '#bbf7d0', '#4ade80', '#ffffff'],
+  ['#eff6ff', '#dbeafe', '#bfdbfe', '#60a5fa', '#ffffff'],
 ];
 
-const SPARK_COLORS = ['#f97316', '#fbbf24', '#ef4444', '#fb923c', '#ffffff', '#fcd34d'];
+const SPARK_COLORS = ['#f97316', '#fbbf24', '#ef4444', '#fb923c', '#ffffff', '#fcd34d', '#f472b6', '#a78bfa', '#34d399'];
 
 interface Tile {
   id: number;
-  x: number;      // px from viewport left
-  y: number;      // px from viewport top
+  x: number;
+  y: number;
   w: number;
   h: number;
   color: string;
@@ -28,8 +29,8 @@ interface Tile {
 
 interface Spark {
   id: number;
-  left: number;   // vw %
-  top: number;    // vh %
+  left: number;
+  top: number;
   txVw: number;
   tyVh: number;
   rot: number;
@@ -47,65 +48,131 @@ interface Props {
 export default function ExplosionParticles({ rects }: Props) {
   const { tiles, sparks } = useMemo(() => {
     const tiles: Tile[] = [];
-    const TILE = 22; // 타일 크기 px
-    const MAX_PER_SECTION = 45;
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
 
     rects.forEach((rect, si) => {
-      const cols = Math.ceil(rect.width / TILE);
-      const rows = Math.ceil(rect.height / TILE);
-      const total = cols * rows;
-      const step = total > MAX_PER_SECTION ? total / MAX_PER_SECTION : 1;
       const palette = SECTION_COLORS[si % SECTION_COLORS.length];
-      let count = 0;
 
-      for (let idx = 0; idx < total; idx += step) {
+      // ── 잔해 레이어 1: 미세 파편 (8px) ─────────────────────────
+      const FINE = 8;
+      const fineCols = Math.ceil(rect.width / FINE);
+      const fineRows = Math.ceil(rect.height / FINE);
+      const fineTotal = fineCols * fineRows;
+      const fineStep = Math.max(1, fineTotal / 100);
+
+      for (let idx = 0; idx < fineTotal; idx += fineStep) {
         const i = Math.floor(idx);
-        const c = i % cols;
-        const r = Math.floor(i / cols);
-        const cx = rect.x + c * TILE + TILE / 2;
-        const cy = rect.y + r * TILE + TILE / 2;
-
-        // 중심으로부터의 방향 + 랜덤
-        const dx = cx - window.innerWidth / 2;
-        const dy = cy - window.innerHeight / 2;
+        const col = i % fineCols;
+        const row = Math.floor(i / fineCols);
+        const ox = rect.x + col * FINE + FINE / 2;
+        const oy = rect.y + row * FINE + FINE / 2;
+        const dx = ox - cx;
+        const dy = oy - cy;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const speed = 300 + Math.random() * 500;
-        const gravity = 150 + Math.random() * 200; // 아래로 가속
+        const speed = 700 + Math.random() * 1000;
+        const grav = 350 + Math.random() * 400;
 
         tiles.push({
           id: tiles.length,
-          x: rect.x + c * TILE,
-          y: rect.y + r * TILE,
-          w: Math.min(TILE, rect.width - c * TILE) + Math.random() * 4,
-          h: Math.min(TILE, rect.height - r * TILE) + Math.random() * 4,
+          x: rect.x + col * FINE,
+          y: rect.y + row * FINE,
+          w: FINE * (0.3 + Math.random() * 0.9),
+          h: FINE * (0.3 + Math.random() * 0.9),
+          color: palette[Math.floor(Math.random() * palette.length)],
+          txPx: (dx / dist) * speed * (0.7 + Math.random() * 0.9),
+          tyPx: (dy / dist) * speed * 0.45 * (0.6 + Math.random()) + grav,
+          rot: (Math.random() - 0.5) * 2400,
+          duration: 0.55 + Math.random() * 0.45,
+          delay: Math.random() * 0.06,
+        });
+      }
+
+      // ── 잔해 레이어 2: 중간 조각 (20px) ────────────────────────
+      const MED = 20;
+      const medCols = Math.ceil(rect.width / MED);
+      const medRows = Math.ceil(rect.height / MED);
+      const medTotal = medCols * medRows;
+      const medStep = Math.max(1, medTotal / 50);
+
+      for (let idx = 0; idx < medTotal; idx += medStep) {
+        const i = Math.floor(idx);
+        const col = i % medCols;
+        const row = Math.floor(i / medCols);
+        const ox = rect.x + col * MED + MED / 2;
+        const oy = rect.y + row * MED + MED / 2;
+        const dx = ox - cx;
+        const dy = oy - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const speed = 500 + Math.random() * 800;
+        const grav = 250 + Math.random() * 350;
+
+        tiles.push({
+          id: tiles.length,
+          x: rect.x + col * MED,
+          y: rect.y + row * MED,
+          w: MED * (0.5 + Math.random() * 0.7),
+          h: MED * (0.4 + Math.random() * 0.7),
+          color: palette[Math.floor(Math.random() * palette.length)],
+          txPx: (dx / dist) * speed * (0.6 + Math.random() * 0.9),
+          tyPx: (dy / dist) * speed * 0.4 * (0.6 + Math.random()) + grav,
+          rot: (Math.random() - 0.5) * 1800,
+          duration: 0.6 + Math.random() * 0.5,
+          delay: Math.random() * 0.08,
+        });
+      }
+
+      // ── 잔해 레이어 3: 큰 덩어리 (40px) ────────────────────────
+      const CHUNK = 40;
+      const chunkCols = Math.ceil(rect.width / CHUNK);
+      const chunkRows = Math.ceil(rect.height / CHUNK);
+      const chunkTotal = chunkCols * chunkRows;
+      const chunkStep = Math.max(1, chunkTotal / 12);
+
+      for (let idx = 0; idx < chunkTotal; idx += chunkStep) {
+        const i = Math.floor(idx);
+        const col = i % chunkCols;
+        const row = Math.floor(i / chunkCols);
+        const ox = rect.x + col * CHUNK + CHUNK / 2;
+        const oy = rect.y + row * CHUNK + CHUNK / 2;
+        const dx = ox - cx;
+        const dy = oy - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const speed = 350 + Math.random() * 550;
+        const grav = 200 + Math.random() * 300;
+
+        tiles.push({
+          id: tiles.length,
+          x: rect.x + col * CHUNK,
+          y: rect.y + row * CHUNK,
+          w: CHUNK * (0.55 + Math.random() * 0.65),
+          h: CHUNK * (0.55 + Math.random() * 0.65),
           color: palette[Math.floor(Math.random() * palette.length)],
           txPx: (dx / dist) * speed * (0.5 + Math.random()),
-          tyPx: (dy / dist) * (speed * 0.5) * (0.5 + Math.random()) + gravity,
-          rot: (Math.random() - 0.5) * 1440,
-          duration: 0.45 + Math.random() * 0.5,
+          tyPx: (dy / dist) * speed * 0.4 * (0.5 + Math.random()) + grav,
+          rot: (Math.random() - 0.5) * 1200,
+          duration: 0.65 + Math.random() * 0.5,
           delay: Math.random() * 0.1,
         });
-
-        if (++count >= MAX_PER_SECTION) break;
       }
     });
 
-    // 중심 스파크 (불꽃 느낌)
-    const sparks: Spark[] = Array.from({ length: 60 }, (_, i) => {
-      const angle = (i / 60) * Math.PI * 2 + (Math.random() - 0.5) * 0.8;
-      const dist = 20 + Math.random() * 55;
+    // ── 중심 스파크 ───────────────────────────────────────────────
+    const sparks: Spark[] = Array.from({ length: 140 }, (_, i) => {
+      const angle = (i / 140) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+      const dist = 28 + Math.random() * 68;
       return {
         id: i,
-        left: 50 + (Math.random() - 0.5) * 15,
-        top: 45 + (Math.random() - 0.5) * 15,
-        txVw: Math.cos(angle) * dist * (0.8 + Math.random() * 0.8),
-        tyVh: Math.sin(angle) * dist * (0.8 + Math.random() * 0.8),
-        rot: (Math.random() - 0.5) * 1800,
-        size: Math.random() * 8 + 2,
+        left: 50 + (Math.random() - 0.5) * 22,
+        top: 45 + (Math.random() - 0.5) * 22,
+        txVw: Math.cos(angle) * dist * (0.9 + Math.random() * 0.9),
+        tyVh: Math.sin(angle) * dist * (0.9 + Math.random() * 0.9),
+        rot: (Math.random() - 0.5) * 2400,
+        size: Math.random() * 11 + 2,
         color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
-        duration: 0.3 + Math.random() * 0.5,
+        duration: 0.4 + Math.random() * 0.6,
         delay: Math.random() * 0.1,
-        isCircle: Math.random() > 0.4,
+        isCircle: Math.random() > 0.3,
       };
     });
 
@@ -117,37 +184,41 @@ export default function ExplosionParticles({ rects }: Props) {
       <style>{`
         @keyframes tile-shatter {
           0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity: 1; }
-          15%  { opacity: 1; }
-          100% { transform: translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(0.05); opacity: 0; }
+          8%   { opacity: 1; }
+          100% { transform: translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(0.01); opacity: 0; }
         }
         @keyframes spark-fly {
           0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity: 1; }
-          100% { transform: translate(var(--sx),var(--sy)) rotate(var(--srot)) scale(0.05); opacity: 0; }
+          100% { transform: translate(var(--sx),var(--sy)) rotate(var(--srot)) scale(0.01); opacity: 0; }
         }
         @keyframes screen-flash {
-          0%   { opacity: 0.85; }
+          0%   { opacity: 0.95; }
+          30%  { opacity: 0.7; }
           100% { opacity: 0; }
         }
         @keyframes screen-shake {
-          0%,100% { transform: translate(0,0); }
-          15%     { transform: translate(-8px, 5px); }
-          30%     { transform: translate(8px, -5px); }
-          50%     { transform: translate(-5px, 7px); }
-          70%     { transform: translate(5px, -3px); }
-          85%     { transform: translate(-3px, 4px); }
+          0%,100% { transform: translate(0,0) rotate(0deg); }
+          8%      { transform: translate(-14px, 10px) rotate(-0.8deg); }
+          18%     { transform: translate(14px, -10px) rotate(0.8deg); }
+          28%     { transform: translate(-11px, 12px) rotate(-0.5deg); }
+          38%     { transform: translate(11px, -8px) rotate(0.5deg); }
+          50%     { transform: translate(-8px, 9px); }
+          65%     { transform: translate(8px, -6px); }
+          80%     { transform: translate(-4px, 4px); }
+          92%     { transform: translate(3px, -2px); }
         }
       `}</style>
 
       {/* 화면 흔들림 */}
-      <div className="fixed inset-0" style={{ animation: 'screen-shake 0.3s ease-out forwards' }} />
+      <div className="fixed inset-0" style={{ animation: 'screen-shake 0.6s ease-out forwards' }} />
 
       {/* 플래시 */}
       <div
-        className="fixed inset-0 z-[9999] bg-orange-200"
-        style={{ animation: 'screen-flash 0.2s ease-out forwards' }}
+        className="fixed inset-0 z-[9999] bg-orange-50"
+        style={{ animation: 'screen-flash 0.3s ease-out forwards' }}
       />
 
-      {/* 섹션 타일 파편 */}
+      {/* 타일 파편 전부 */}
       {tiles.map(t => (
         <div
           key={`t-${t.id}`}
@@ -158,18 +229,18 @@ export default function ExplosionParticles({ rects }: Props) {
             width: t.w,
             height: t.h,
             backgroundColor: t.color,
-            border: '1px solid rgba(244,114,182,0.3)',
+            border: '1px solid rgba(244,114,182,0.2)',
             borderRadius: '2px',
             ['--tx' as string]: `${t.txPx}px`,
             ['--ty' as string]: `${t.tyPx}px`,
             ['--rot' as string]: `${t.rot}deg`,
-            animation: `tile-shatter ${t.duration}s cubic-bezier(0.2, 0.8, 0.4, 1) ${t.delay}s forwards`,
+            animation: `tile-shatter ${t.duration}s cubic-bezier(0.1,0.8,0.3,1) ${t.delay}s forwards`,
             willChange: 'transform, opacity',
           }}
         />
       ))}
 
-      {/* 중심 스파크 */}
+      {/* 스파크 */}
       {sparks.map(s => (
         <div
           key={`s-${s.id}`}
@@ -184,7 +255,7 @@ export default function ExplosionParticles({ rects }: Props) {
             ['--sx' as string]: `${s.txVw}vw`,
             ['--sy' as string]: `${s.tyVh}vh`,
             ['--srot' as string]: `${s.rot}deg`,
-            animation: `spark-fly ${s.duration}s cubic-bezier(0.1, 0.9, 0.3, 1) ${s.delay}s forwards`,
+            animation: `spark-fly ${s.duration}s cubic-bezier(0.1,0.9,0.3,1) ${s.delay}s forwards`,
             willChange: 'transform, opacity',
           }}
         />
