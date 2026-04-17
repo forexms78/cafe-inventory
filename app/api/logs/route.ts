@@ -20,18 +20,26 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { error } = await supabase.from('stock_logs').insert({
+  const { data, error } = await supabase.from('stock_logs').insert({
     item_name: body.itemName,
     field: body.field,
     old_value: body.oldValue,
     new_value: body.newValue,
     user_name: body.user,
-  });
+  }).select('id').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, id: data.id });
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get('id');
+
+  if (id) {
+    const { error } = await supabase.from('stock_logs').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   const { error } = await supabase
     .from('stock_logs')
     .delete()

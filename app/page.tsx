@@ -225,6 +225,26 @@ export default function Home() {
     const toastId = `undo-${id}-${field}`;
     const prevValue = prev as number;
 
+    let logId: string | null = null;
+    try {
+      const logRes = await fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          itemName,
+          field,
+          oldValue: prevValue,
+          newValue: value,
+          user: user?.name ?? '비로그인',
+        }),
+      });
+      const logData = await logRes.json();
+      logId = logData.id ?? null;
+    } catch {
+      // 로그 실패는 무시
+    }
+
     toast(`${itemName} ${fieldLabel} ${prevValue} → ${value}`, {
       id: toastId,
       duration: 5000,
@@ -237,23 +257,13 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, [field]: prevValue }),
           }).catch(() => {});
+          if (logId) {
+            fetch(`/api/logs?id=${logId}`, { method: 'DELETE' }).catch(() => {});
+          }
           toast.success('실행취소 완료', { duration: 2000 });
         },
       },
     });
-
-    fetch('/api/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        itemName,
-        field,
-        oldValue: prevValue,
-        newValue: value,
-        user: user?.name ?? '비로그인',
-      }),
-    }).catch(() => {});
   };
 
   const handleProductNameChange = async (id: string, name: string | null) => {
