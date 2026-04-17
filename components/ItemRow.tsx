@@ -4,6 +4,7 @@ import { Item, CafeUser, getStockStatus, Unit } from '@/types';
 import { Button } from '@/components/ui/button';
 import PriceCompareModal from '@/components/PriceCompareModal';
 import ExpiryModal from '@/components/ExpiryModal';
+import { playClickSound } from '@/lib/sounds';
 
 interface Props {
   item: Item;
@@ -100,6 +101,7 @@ const StockCell = forwardRef<StockCellRef, {
     const timeout = setTimeout(() => {
       intervalRef.current = setInterval(() => {
         const next = Math.min(maxVal, Math.max(0, valueRef.current + delta));
+        playClickSound(delta > 0 ? 'plus' : 'minus');
         onStockChange(itemId, field, next);
       }, 150);
     }, 400);
@@ -112,7 +114,7 @@ const StockCell = forwardRef<StockCellRef, {
   return (
     <div className="flex items-center justify-center gap-1.5">
       <button
-        onClick={() => onStockChange(itemId, field, Math.max(0, value - 1))}
+        onClick={() => { playClickSound('minus'); onStockChange(itemId, field, Math.max(0, value - 1)); }}
         onMouseDown={() => startLongPress(-1)}
         onMouseUp={stopLongPress}
         onMouseLeave={stopLongPress}
@@ -148,7 +150,7 @@ const StockCell = forwardRef<StockCellRef, {
         </button>
       )}
       <button
-        onClick={() => onStockChange(itemId, field, Math.min(maxVal, value + 1))}
+        onClick={() => { playClickSound('plus'); onStockChange(itemId, field, Math.min(maxVal, value + 1)); }}
         onMouseDown={() => startLongPress(1)}
         onMouseUp={stopLongPress}
         onMouseLeave={stopLongPress}
