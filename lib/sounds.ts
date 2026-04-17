@@ -6,23 +6,56 @@ export function playExplosionSound() {
 
   const now = ctx.currentTime;
 
-  // 저음 폭발 충격파 — "펑" 바디감
+  // 고주파 짧은 crack — 순간 임팩트 "팍"
+  const crack = ctx.createOscillator();
+  crack.type = 'sawtooth';
+  crack.frequency.setValueAtTime(900, now);
+  crack.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+
+  const crackGain = ctx.createGain();
+  crackGain.gain.setValueAtTime(0.7, now);
+  crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+  crack.connect(crackGain);
+  crackGain.connect(ctx.destination);
+  crack.start(now);
+  crack.stop(now + 0.1);
+
+  // 저음 폭발 충격파 — "퍼어어어엉" 바디감 (2.5s)
   const boom = ctx.createOscillator();
   boom.type = 'sine';
-  boom.frequency.setValueAtTime(120, now);
-  boom.frequency.exponentialRampToValueAtTime(25, now + 0.6);
+  boom.frequency.setValueAtTime(110, now);
+  boom.frequency.exponentialRampToValueAtTime(18, now + 2.5);
 
   const boomGain = ctx.createGain();
-  boomGain.gain.setValueAtTime(1.2, now);
-  boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+  boomGain.gain.setValueAtTime(1.4, now);
+  boomGain.gain.setValueAtTime(1.4, now + 0.05);
+  boomGain.gain.exponentialRampToValueAtTime(0.3, now + 0.8);
+  boomGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
 
   boom.connect(boomGain);
   boomGain.connect(ctx.destination);
   boom.start(now);
-  boom.stop(now + 0.7);
+  boom.stop(now + 2.5);
 
-  // 노이즈 크래시 — 파편 튀는 느낌
-  const bufSize = Math.floor(ctx.sampleRate * 0.4);
+  // 서브 럼블 — 저음이 계속 울리는 느낌
+  const rumble = ctx.createOscillator();
+  rumble.type = 'sine';
+  rumble.frequency.setValueAtTime(55, now + 0.1);
+  rumble.frequency.exponentialRampToValueAtTime(22, now + 2.5);
+
+  const rumbleGain = ctx.createGain();
+  rumbleGain.gain.setValueAtTime(0, now);
+  rumbleGain.gain.linearRampToValueAtTime(0.6, now + 0.15);
+  rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+
+  rumble.connect(rumbleGain);
+  rumbleGain.connect(ctx.destination);
+  rumble.start(now);
+  rumble.stop(now + 2.5);
+
+  // 노이즈 크래시 — 파편 튀는 느낌 (길게)
+  const bufSize = Math.floor(ctx.sampleRate * 1.2);
   const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
   const data = buf.getChannelData(0);
   for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
@@ -31,34 +64,20 @@ export function playExplosionSound() {
   noise.buffer = buf;
 
   const noiseFilter = ctx.createBiquadFilter();
-  noiseFilter.type = 'lowpass';
-  noiseFilter.frequency.setValueAtTime(3000, now);
-  noiseFilter.frequency.exponentialRampToValueAtTime(300, now + 0.4);
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.setValueAtTime(2000, now);
+  noiseFilter.frequency.exponentialRampToValueAtTime(200, now + 1.2);
+  noiseFilter.Q.setValueAtTime(0.8, now);
 
   const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.8, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+  noiseGain.gain.setValueAtTime(0.9, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
 
   noise.connect(noiseFilter);
   noiseFilter.connect(noiseGain);
   noiseGain.connect(ctx.destination);
   noise.start(now);
-  noise.stop(now + 0.4);
-
-  // 고주파 짧은 crack — 순간 임팩트
-  const crack = ctx.createOscillator();
-  crack.type = 'sawtooth';
-  crack.frequency.setValueAtTime(800, now);
-  crack.frequency.exponentialRampToValueAtTime(100, now + 0.08);
-
-  const crackGain = ctx.createGain();
-  crackGain.gain.setValueAtTime(0.5, now);
-  crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-  crack.connect(crackGain);
-  crackGain.connect(ctx.destination);
-  crack.start(now);
-  crack.stop(now + 0.08);
+  noise.stop(now + 1.2);
 }
 
 let audioCtx: AudioContext | null = null;

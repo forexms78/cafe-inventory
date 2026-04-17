@@ -336,31 +336,30 @@ export default function Home() {
     playExplosionSound();
     setExplosionPhase('exploding');
 
-    // 1.1초 후 → 스트레스 메시지 3초 표시
+    // 3초 동안 파편 감상 후 스트레스 메시지 (버튼 클릭까지 대기)
     setTimeout(() => {
       setExplosionPhase('stress');
+    }, 3000);
+  };
 
-      // 3초 후 → 재건설
-      setTimeout(() => {
-        setExplosionPhase('rebuilding');
-        setRebuildProgress(0);
+  const handleStartRebuilding = () => {
+    setExplosionPhase('rebuilding');
+    setRebuildProgress(0);
 
-        let progress = 0;
-        const interval = setInterval(() => {
-          const increment = Math.random() * 4 + (progress > 80 ? 0.4 : 1.5);
-          progress = Math.min(100, progress + increment);
-          setRebuildProgress(progress);
+    let progress = 0;
+    const interval = setInterval(() => {
+      const increment = Math.random() * 4 + (progress > 80 ? 0.4 : 1.5);
+      progress = Math.min(100, progress + increment);
+      setRebuildProgress(progress);
 
-          if (progress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              setExplosionPhase('idle');
-              setRebuildProgress(0);
-            }, 600);
-          }
-        }, 60);
-      }, 3000);
-    }, 1100);
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setExplosionPhase('idle');
+          setRebuildProgress(0);
+        }, 600);
+      }
+    }, 60);
   };
 
   const handleUndoReset = () => {
@@ -449,6 +448,10 @@ export default function Home() {
               0%   { transform: translateY(24px); opacity: 0; }
               100% { transform: translateY(0); opacity: 1; }
             }
+            @keyframes stress-btn {
+              0%   { transform: translateY(32px); opacity: 0; }
+              100% { transform: translateY(0); opacity: 1; }
+            }
           `}</style>
           <p
             className="text-pink-400 text-5xl font-bold text-center leading-tight"
@@ -462,6 +465,13 @@ export default function Home() {
           >
             오늘도 화이팅!
           </p>
+          <button
+            onClick={handleStartRebuilding}
+            className="mt-10 px-8 py-4 rounded-2xl text-lg font-bold text-gray-900 bg-amber-400 hover:bg-amber-300 active:scale-95 transition-all"
+            style={{ fontFamily: 'var(--font-jua)', animation: 'stress-btn 0.4s ease-out 0.7s both' }}
+          >
+            재건축하기
+          </button>
         </div>
       )}
       <ExplosionOverlay visible={explosionPhase === 'rebuilding'} progress={rebuildProgress} />

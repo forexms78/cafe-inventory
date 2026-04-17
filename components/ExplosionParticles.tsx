@@ -83,8 +83,8 @@ export default function ExplosionParticles({ rects }: Props) {
           txPx: (dx / dist) * speed * (0.7 + Math.random() * 0.9),
           tyPx: (dy / dist) * speed * 0.45 * (0.6 + Math.random()) + grav,
           rot: (Math.random() - 0.5) * 2400,
-          duration: 0.55 + Math.random() * 0.45,
-          delay: Math.random() * 0.06,
+          duration: 1.0 + Math.random() * 0.8,
+          delay: Math.random() * 0.15,
         });
       }
 
@@ -117,8 +117,8 @@ export default function ExplosionParticles({ rects }: Props) {
           txPx: (dx / dist) * speed * (0.6 + Math.random() * 0.9),
           tyPx: (dy / dist) * speed * 0.4 * (0.6 + Math.random()) + grav,
           rot: (Math.random() - 0.5) * 1800,
-          duration: 0.6 + Math.random() * 0.5,
-          delay: Math.random() * 0.08,
+          duration: 1.1 + Math.random() * 0.9,
+          delay: Math.random() * 0.18,
         });
       }
 
@@ -151,8 +151,8 @@ export default function ExplosionParticles({ rects }: Props) {
           txPx: (dx / dist) * speed * (0.5 + Math.random()),
           tyPx: (dy / dist) * speed * 0.4 * (0.5 + Math.random()) + grav,
           rot: (Math.random() - 0.5) * 1200,
-          duration: 0.65 + Math.random() * 0.5,
-          delay: Math.random() * 0.1,
+          duration: 1.2 + Math.random() * 1.0,
+          delay: Math.random() * 0.22,
         });
       }
     });
@@ -170,8 +170,8 @@ export default function ExplosionParticles({ rects }: Props) {
         rot: (Math.random() - 0.5) * 2400,
         size: Math.random() * 11 + 2,
         color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
-        duration: 0.4 + Math.random() * 0.6,
-        delay: Math.random() * 0.1,
+        duration: 0.8 + Math.random() * 1.0,
+        delay: Math.random() * 0.15,
         isCircle: Math.random() > 0.3,
       };
     });
