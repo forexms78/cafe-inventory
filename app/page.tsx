@@ -13,6 +13,8 @@ import ChangePasswordModal from '@/components/ChangePasswordModal';
 import MenuDrawer from '@/components/MenuDrawer';
 import ThemeButton from '@/components/ThemeButton';
 import ExplosionOverlay from '@/components/ExplosionOverlay';
+import ExplosionParticles from '@/components/ExplosionParticles';
+import { playExplosionSound } from '@/lib/sounds';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -82,6 +84,7 @@ export default function Home() {
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [explosionPhase, setExplosionPhase] = useState<'idle' | 'exploding' | 'rebuilding'>('idle');
   const [rebuildProgress, setRebuildProgress] = useState(0);
+  const [explosionRects, setExplosionRects] = useState<{ x: number; y: number; width: number; height: number }[]>([]);
   const logPendingRef = useRef<Map<string, {
     originalOldValue: number;
     latestNewValue: number;
@@ -325,53 +328,34 @@ export default function Home() {
 
   const handleExplode = () => {
     if (explosionPhase !== 'idle') return;
+    const rects = Array.from(document.querySelectorAll('[data-explodable]')).map(el => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left, y: r.top, width: r.width, height: r.height };
+    });
+    setExplosionRects(rects);
+    playExplosionSound();
     setExplosionPhase('exploding');
 
-    // 모든 폭발 대상 요소를 랜덤 방향으로 날림
-    const elements = document.querySelectorAll<HTMLElement>('[data-explodable]');
-    elements.forEach((el) => {
-      const x = (Math.random() - 0.5) * window.innerWidth * 2.5;
-      const y = (Math.random() - 0.5) * window.innerHeight * 2.5;
-      const rotate = (Math.random() - 0.5) * 1080;
-      const scale = Math.random() * 0.2;
-      el.style.transition = 'transform 0.9s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.7s ease-in';
-      el.style.transform = `translate(${x}px, ${y}px) rotate(${rotate}deg) scale(${scale})`;
-      el.style.opacity = '0';
-    });
-
-    // 1초 후 재건설 화면 표시
+    // 1.2초 후 재건설 화면
     setTimeout(() => {
       setExplosionPhase('rebuilding');
       setRebuildProgress(0);
 
       let progress = 0;
       const interval = setInterval(() => {
-        // 불규칙적인 공사 진행 — 가끔 멈추는 척
-        const increment = Math.random() * 4 + (progress > 80 ? 0.5 : 1.5);
+        const increment = Math.random() * 4 + (progress > 80 ? 0.4 : 1.5);
         progress = Math.min(100, progress + increment);
         setRebuildProgress(progress);
 
         if (progress >= 100) {
           clearInterval(interval);
-
-          // 0.6초 후 원래 화면 복구
           setTimeout(() => {
-            elements.forEach((el) => {
-              el.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
-              el.style.transform = '';
-              el.style.opacity = '';
-            });
-            setTimeout(() => {
-              elements.forEach((el) => {
-                el.style.transition = '';
-              });
-              setExplosionPhase('idle');
-              setRebuildProgress(0);
-            }, 500);
+            setExplosionPhase('idle');
+            setRebuildProgress(0);
           }, 600);
         }
       }, 60);
-    }, 1000);
+    }, 1200);
   };
 
   const handleUndoReset = () => {
@@ -445,8 +429,10 @@ export default function Home() {
   };
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-6 w-full">
+    <>
+      {explosionPhase !== 'idle' && <ExplosionParticles rects={explosionRects} />}
       <ExplosionOverlay visible={explosionPhase === 'rebuilding'} progress={rebuildProgress} />
+    <main className={`max-w-4xl mx-auto px-4 py-6 w-full transition-opacity duration-100 ${explosionPhase !== 'idle' ? 'opacity-0 pointer-events-none' : ''}`}>
 
       {/* 헤더 */}
       <div data-explodable className="flex items-center justify-between mb-6">
@@ -466,6 +452,14 @@ export default function Home() {
             </svg>
             로그
           </Link>
+          {(user?.role === 'owner' || user?.role === 'developer') && (
+            <button
+              onClick={handleExplode}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-orange-500 border border-orange-200 rounded-full bg-white hover:bg-orange-50 active:bg-orange-100 transition-colors mt-1"
+            >
+              폭파
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
         <ThemeButton />
@@ -685,7 +679,6 @@ export default function Home() {
         onReorderStart={handleReorderStart}
         onReorderSave={handleReorderSave}
         onResetConfirm={() => setShowResetConfirm(true)}
-        onExplode={handleExplode}
         onChangePw={() => setShowChangePw(true)}
         onLogout={() => { clearSession(); setUser(null); }}
         onLogin={() => setShowLogin(true)}
@@ -699,5 +692,6 @@ export default function Home() {
         onClose={() => setShowLogin(false)} />
       <ChangePasswordModal open={showChangePw} onClose={() => setShowChangePw(false)} />
     </main>
+    </>
   );
 }

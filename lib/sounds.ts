@@ -1,5 +1,66 @@
 type ClickType = 'plus' | 'minus';
 
+export function playExplosionSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+
+  // 저음 폭발 충격파 — "펑" 바디감
+  const boom = ctx.createOscillator();
+  boom.type = 'sine';
+  boom.frequency.setValueAtTime(120, now);
+  boom.frequency.exponentialRampToValueAtTime(25, now + 0.6);
+
+  const boomGain = ctx.createGain();
+  boomGain.gain.setValueAtTime(1.2, now);
+  boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+  boom.connect(boomGain);
+  boomGain.connect(ctx.destination);
+  boom.start(now);
+  boom.stop(now + 0.7);
+
+  // 노이즈 크래시 — 파편 튀는 느낌
+  const bufSize = Math.floor(ctx.sampleRate * 0.4);
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = buf;
+
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = 'lowpass';
+  noiseFilter.frequency.setValueAtTime(3000, now);
+  noiseFilter.frequency.exponentialRampToValueAtTime(300, now + 0.4);
+
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(0.8, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(ctx.destination);
+  noise.start(now);
+  noise.stop(now + 0.4);
+
+  // 고주파 짧은 crack — 순간 임팩트
+  const crack = ctx.createOscillator();
+  crack.type = 'sawtooth';
+  crack.frequency.setValueAtTime(800, now);
+  crack.frequency.exponentialRampToValueAtTime(100, now + 0.08);
+
+  const crackGain = ctx.createGain();
+  crackGain.gain.setValueAtTime(0.5, now);
+  crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+  crack.connect(crackGain);
+  crackGain.connect(ctx.destination);
+  crack.start(now);
+  crack.stop(now + 0.08);
+}
+
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {

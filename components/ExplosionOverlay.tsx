@@ -61,6 +61,7 @@ export default function ExplosionOverlay({ progress, visible }: Props) {
       <div className="text-center">
         <p className="text-amber-400 text-3xl font-bold tracking-wide mb-1">재건설합니다</p>
         <p className="text-gray-400 text-sm">{MESSAGES[msgIndex]}{dots}</p>
+        <p className="text-pink-400 text-base font-semibold mt-3">아가님 스트레스 뿌셔 오늘도 화이팅!</p>
       </div>
 
       {/* 프로그레스 바 */}
