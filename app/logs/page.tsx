@@ -104,7 +104,7 @@ export default function LogsPage() {
     if (!session) { router.replace('/'); return; }
 
     Promise.all([
-      fetch('/api/logs?limit=500').then(r => r.json()),
+      fetch('/api/logs?limit=1000').then(r => r.json()),
       fetch('/api/items').then(r => r.json()),
     ]).then(([logsData, itemsData]) => {
       setLogs(Array.isArray(logsData) ? logsData : []);

@@ -105,7 +105,9 @@ export default function MenuDrawer({
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800">{user.name}</p>
-                <p className="text-xs text-pink-400">{user.role === 'owner' ? '오너' : '매니저'}</p>
+                <p className="text-xs text-pink-400">
+                  {user.role === 'owner' ? '오너' : user.role === 'developer' ? '개발자' : '매니저'}
+                </p>
               </div>
             </div>
           ) : (
@@ -143,7 +145,7 @@ export default function MenuDrawer({
 
               {/* 계정 */}
               <p className="text-xs text-pink-300 font-semibold px-1 pb-1 uppercase tracking-wider">계정</p>
-              {user.role === 'owner' && (
+              {(user.role === 'owner' || user.role === 'developer') && (
                 <MenuItem label="비밀번호 변경" onClick={onChangePw} />
               )}
               <MenuItem label="로그아웃" onClick={onLogout} />

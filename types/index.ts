@@ -31,7 +31,7 @@ export function getStockStatus(item: Item): StockStatus {
   return 'ok';
 }
 
-export type Role = 'owner' | 'manager';
+export type Role = 'owner' | 'manager' | 'developer';
 
 export interface CafeUser {
   id: string;

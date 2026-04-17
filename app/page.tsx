@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { Item, Category, Unit, CafeUser, getStockStatus, CATEGORIES } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
@@ -219,8 +220,28 @@ export default function Home() {
       }
     }
 
-    toast.success('저장됨', { id: 'stock-save' });
     const itemName = items.find(i => i.id === id)?.name ?? id;
+    const fieldLabel = field === 'stock' ? '매장' : field === 'pantry_stock' ? '팬트리' : '사무실';
+    const toastId = `undo-${id}-${field}`;
+    const prevValue = prev as number;
+
+    toast(`${itemName} ${fieldLabel} ${prevValue} → ${value}`, {
+      id: toastId,
+      duration: 5000,
+      action: {
+        label: '실행취소',
+        onClick: () => {
+          setItems(current => current.map(i => i.id === id ? { ...i, [field]: prevValue } : i));
+          fetch('/api/items', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, [field]: prevValue }),
+          }).catch(() => {});
+          toast.success('실행취소 완료', { duration: 2000 });
+        },
+      },
+    });
+
     fetch('/api/logs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -228,7 +249,7 @@ export default function Home() {
         timestamp: new Date().toISOString(),
         itemName,
         field,
-        oldValue: prev as number,
+        oldValue: prevValue,
         newValue: value,
         user: user?.name ?? '비로그인',
       }),
@@ -337,11 +358,22 @@ export default function Home() {
     <main className="max-w-4xl mx-auto px-4 py-6 w-full">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-4xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
-            재고관리
-          </h1>
-          <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-4xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
+              재고관리
+            </h1>
+            <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
+          </div>
+          <Link
+            href="/logs"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-pink-500 border border-pink-200 rounded-full bg-white hover:bg-pink-50 transition-colors mt-1"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 3h8M2 6h6M2 9h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            로그
+          </Link>
         </div>
         <div className="flex items-center gap-2">
         <ThemeButton />
