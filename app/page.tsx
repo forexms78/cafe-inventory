@@ -79,6 +79,13 @@ export default function Home() {
   const [showDrawer, setShowDrawer] = useState(false);
   const resetSnapshotRef = useRef<{ id: string; stock: number }[]>([]);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logPendingRef = useRef<Map<string, {
+    originalOldValue: number;
+    latestNewValue: number;
+    timer: ReturnType<typeof setTimeout>;
+    fired: boolean;
+    logId: string | null;
+  }>>(new Map());
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items');
@@ -222,43 +229,62 @@ export default function Home() {
 
     const itemName = items.find(i => i.id === id)?.name ?? id;
     const fieldLabel = field === 'stock' ? '매장' : field === 'pantry_stock' ? '팬트리' : '사무실';
-    const toastId = `undo-${id}-${field}`;
+    const logKey = `${id}-${field}`;
     const prevValue = prev as number;
 
-    let logId: string | null = null;
-    try {
-      const logRes = await fetch('/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          timestamp: new Date().toISOString(),
-          itemName,
-          field,
-          oldValue: prevValue,
-          newValue: value,
-          user: user?.name ?? '비로그인',
-        }),
-      });
-      const logData = await logRes.json();
-      logId = logData.id ?? null;
-    } catch {
-      // 로그 실패는 무시
+    // 연속 변경 디바운스: 1.5초 내 동일 품목+필드 변경은 한 줄로 묶음
+    let pending = logPendingRef.current.get(logKey);
+    const originalOldValue = pending ? pending.originalOldValue : prevValue;
+
+    if (pending) {
+      clearTimeout(pending.timer);
+      pending.latestNewValue = value;
+    } else {
+      pending = { originalOldValue: prevValue, latestNewValue: value, timer: null!, fired: false, logId: null };
+      logPendingRef.current.set(logKey, pending);
     }
 
-    toast(`${itemName} ${fieldLabel} ${prevValue} → ${value}`, {
-      id: toastId,
+    const capturedPending = pending;
+    capturedPending.timer = setTimeout(async () => {
+      const entry = logPendingRef.current.get(logKey);
+      if (!entry) return;
+      entry.fired = true;
+      logPendingRef.current.delete(logKey);
+      try {
+        const res = await fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            itemName,
+            field,
+            oldValue: entry.originalOldValue,
+            newValue: entry.latestNewValue,
+            user: user?.name ?? '비로그인',
+          }),
+        });
+        const data = await res.json();
+        entry.logId = data.id ?? null;
+      } catch {}
+    }, 1500);
+
+    toast(`${itemName} ${fieldLabel} ${originalOldValue} → ${value}`, {
+      id: `undo-${id}-${field}`,
       duration: 5000,
       action: {
         label: '실행취소',
         onClick: () => {
-          setItems(current => current.map(i => i.id === id ? { ...i, [field]: prevValue } : i));
+          setItems(current => current.map(i => i.id === id ? { ...i, [field]: originalOldValue } : i));
           fetch('/api/items', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, [field]: prevValue }),
+            body: JSON.stringify({ id, [field]: originalOldValue }),
           }).catch(() => {});
-          if (logId) {
-            fetch(`/api/logs?id=${logId}`, { method: 'DELETE' }).catch(() => {});
+          const cur = logPendingRef.current.get(logKey);
+          if (cur && !cur.fired) {
+            clearTimeout(cur.timer);
+            logPendingRef.current.delete(logKey);
+          } else if (capturedPending.logId) {
+            fetch(`/api/logs?id=${capturedPending.logId}`, { method: 'DELETE' }).catch(() => {});
           }
           toast.success('실행취소 완료', { duration: 2000 });
         },
