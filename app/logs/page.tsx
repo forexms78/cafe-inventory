@@ -91,6 +91,7 @@ export default function LogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeveloper, setIsDeveloper] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange>('7d');
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>('all');
@@ -102,6 +103,7 @@ export default function LogsPage() {
   useEffect(() => {
     const session = getSession();
     if (!session) { router.replace('/'); return; }
+    setIsDeveloper(session.role === 'developer');
 
     Promise.all([
       fetch('/api/logs?limit=1000').then(r => r.json()),
@@ -111,6 +113,11 @@ export default function LogsPage() {
       setItems(Array.isArray(itemsData) ? itemsData : []);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [router]);
+
+  const handleDeleteLog = async (logId: string) => {
+    await fetch(`/api/logs?id=${logId}`, { method: 'DELETE' }).catch(() => {});
+    setLogs(prev => prev.filter(l => l.id !== logId));
+  };
 
   const categoryMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -364,7 +371,18 @@ export default function LogsPage() {
                           </div>
                           <p className="text-xs text-gray-400 mt-0.5 max-w-[260px] truncate">{log.item_name}</p>
                         </div>
-                        <span className="text-xs text-gray-400 flex-shrink-0">{formatTime(log.created_at)}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-gray-400">{formatTime(log.created_at)}</span>
+                          {isDeveloper && (
+                            <button
+                              onClick={() => handleDeleteLog(log.id)}
+                              className="text-xs text-gray-300 hover:text-red-400 transition-colors px-1"
+                              title="로그 삭제"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   }
@@ -399,12 +417,23 @@ export default function LogsPage() {
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">{log.user_name}</p>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className={`text-sm font-bold ${diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                          {diff > 0 ? '+' : ''}{diff}
-                        </p>
-                        <p className="text-xs text-gray-400">{log.old_value} → {log.new_value}</p>
-                        <p className="text-xs text-gray-300">{formatTime(log.created_at)}</p>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          <p className={`text-sm font-bold ${diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                            {diff > 0 ? '+' : ''}{diff}
+                          </p>
+                          <p className="text-xs text-gray-400">{log.old_value} → {log.new_value}</p>
+                          <p className="text-xs text-gray-300">{formatTime(log.created_at)}</p>
+                        </div>
+                        {isDeveloper && (
+                          <button
+                            onClick={() => handleDeleteLog(log.id)}
+                            className="text-xs text-gray-300 hover:text-red-400 transition-colors px-1 self-center"
+                            title="로그 삭제"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
