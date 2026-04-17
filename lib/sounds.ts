@@ -19,45 +19,47 @@ export function playClickSound(type: ClickType) {
   const now = ctx.currentTime;
   const isPlus = type === 'plus';
 
-  // 노이즈 — 기계식 키보드 "탁" 질감
-  const bufferSize = Math.floor(ctx.sampleRate * 0.06);
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
+  // 메인 톤 — 사인파로 말랑한 소리
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+
+  if (isPlus) {
+    // + : 올라가는 "삐↑" — 동전 먹는 느낌
+    osc.frequency.setValueAtTime(520, now);
+    osc.frequency.exponentialRampToValueAtTime(1040, now + 0.12);
+  } else {
+    // - : 내려가는 "뿌↓" — 말랑한 팝
+    osc.frequency.setValueAtTime(740, now);
+    osc.frequency.exponentialRampToValueAtTime(370, now + 0.12);
   }
 
-  const noise = ctx.createBufferSource();
-  noise.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.28, now);
+  gain.gain.linearRampToValueAtTime(0.28, now + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-  const noiseFilter = ctx.createBiquadFilter();
-  noiseFilter.type = 'bandpass';
-  noiseFilter.frequency.value = isPlus ? 3200 : 2200;
-  noiseFilter.Q.value = 1.2;
+  // 하모닉 — 귀여운 배음 추가
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'sine';
+  if (isPlus) {
+    osc2.frequency.setValueAtTime(1040, now);
+    osc2.frequency.exponentialRampToValueAtTime(2080, now + 0.12);
+  } else {
+    osc2.frequency.setValueAtTime(1480, now);
+    osc2.frequency.exponentialRampToValueAtTime(740, now + 0.12);
+  }
 
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.35, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+  const gain2 = ctx.createGain();
+  gain2.gain.setValueAtTime(0.08, now);
+  gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
-  noise.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(ctx.destination);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc2.connect(gain2);
+  gain2.connect(ctx.destination);
 
-  // 톤 — 클릭감 강조
-  const osc = ctx.createOscillator();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(isPlus ? 900 : 650, now);
-  osc.frequency.exponentialRampToValueAtTime(isPlus ? 1100 : 500, now + 0.03);
-
-  const oscGain = ctx.createGain();
-  oscGain.gain.setValueAtTime(0.12, now);
-  oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-
-  osc.connect(oscGain);
-  oscGain.connect(ctx.destination);
-
-  noise.start(now);
-  noise.stop(now + 0.06);
   osc.start(now);
-  osc.stop(now + 0.04);
+  osc.stop(now + 0.15);
+  osc2.start(now);
+  osc2.stop(now + 0.1);
 }
