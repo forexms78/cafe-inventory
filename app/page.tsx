@@ -480,7 +480,7 @@ export default function Home() {
       style={{
         opacity: explosionPhase === 'idle' ? 1 : 0,
         pointerEvents: explosionPhase !== 'idle' ? 'none' : undefined,
-        transition: explosionPhase === 'exploding' ? 'opacity 0.35s ease-out 0.1s' : 'none',
+        transition: 'none',
       }}
     >
 
