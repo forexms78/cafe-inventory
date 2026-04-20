@@ -13,8 +13,8 @@ import ChangePasswordModal from '@/components/ChangePasswordModal';
 import MenuDrawer from '@/components/MenuDrawer';
 import ThemeButton from '@/components/ThemeButton';
 import ExplosionOverlay from '@/components/ExplosionOverlay';
-import ExplosionParticles from '@/components/ExplosionParticles';
 import { playExplosionSound } from '@/lib/sounds';
+import { fireExplosion } from '@/lib/explosion';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -84,7 +84,6 @@ export default function Home() {
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [explosionPhase, setExplosionPhase] = useState<'idle' | 'exploding' | 'stress' | 'rebuilding'>('idle');
   const [rebuildProgress, setRebuildProgress] = useState(0);
-  const [explosionRects, setExplosionRects] = useState<{ x: number; y: number; width: number; height: number }[]>([]);
   const logPendingRef = useRef<Map<string, {
     originalOldValue: number;
     latestNewValue: number;
@@ -332,14 +331,10 @@ export default function Home() {
       const r = el.getBoundingClientRect();
       return { x: r.left, y: r.top, width: r.width, height: r.height };
     });
-    setExplosionRects(rects);
+    // 캔버스를 즉시 DOM에 삽입 — React 리렌더 대기 없음
     playExplosionSound();
+    fireExplosion(rects, () => setExplosionPhase('stress'));
     setExplosionPhase('exploding');
-
-    // 3초 동안 파편 감상 후 스트레스 메시지 (버튼 클릭까지 대기)
-    setTimeout(() => {
-      setExplosionPhase('stress');
-    }, 3000);
   };
 
   const handleStartRebuilding = () => {
@@ -434,7 +429,6 @@ export default function Home() {
 
   return (
     <>
-      {(explosionPhase === 'exploding') && <ExplosionParticles rects={explosionRects} />}
       {explosionPhase === 'stress' && (
         <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center select-none">
           <style>{`
