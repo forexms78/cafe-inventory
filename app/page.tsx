@@ -472,7 +472,9 @@ export default function Home() {
     <main
       className="max-w-4xl mx-auto px-4 py-6 w-full"
       style={{
-        opacity: explosionPhase === 'idle' ? 1 : 0,
+        // opacity는 건드리지 않음 — 카드는 cloneNode 후 개별 visibility:hidden으로 처리
+        // stress/rebuilding 단계에서는 그 화면이 z-index로 전체를 덮음
+        opacity: explosionPhase === 'stress' || explosionPhase === 'rebuilding' ? 0 : 1,
         pointerEvents: explosionPhase !== 'idle' ? 'none' : undefined,
         transition: 'none',
       }}

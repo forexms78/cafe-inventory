@@ -1,8 +1,8 @@
 const SPARK_COLORS = ['#f97316','#fbbf24','#ef4444','#fb923c','#fcd34d','#f472b6','#a78bfa','#34d399','#fff','#60a5fa'];
 
-const SLICE_H  = 28;    // 카드 슬라이스 높이(px)
-const WAVE_MS  = 1300;  // 위→아래 스윕 시간(ms)
-const GRAVITY  = 2200;  // 스파크 중력 (px/s²)
+const SLICE_H  = 44;    // 슬라이스 높이 — 너무 작으면 클론이 많아져 렉
+const WAVE_MS  = 1300;  // 스윕 빔 내려오는 시간(ms)
+const GRAVITY  = 2200;
 
 function rnd(min: number, max: number) { return min + Math.random() * (max - min); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -33,85 +33,81 @@ export function fireExplosion(
   document.body.style.animation = '__xshake 0.75s ease-out forwards';
   const shakeTimer = setTimeout(() => { document.body.style.animation = ''; }, 800);
 
-  // ── 실제 카드 DOM 슬라이스 — 순차 생성으로 렉 방지 ────────────
-  // 한번에 전부 만들지 않고, 각 슬라이스를 낙하 직전에 하나씩 생성
-  const allTimers: ReturnType<typeof setTimeout>[] = [];
+  // ── DOM 슬라이스: React 렌더 전에 동기적으로 전부 생성 ─────────
+  // 클론이 먼저 DOM에 존재 → 원본이 사라져도 화면에 보임
   const createdSlices: HTMLElement[] = [];
+  const allTimers: ReturnType<typeof setTimeout>[] = [];
   let maxEndMs = 0;
 
   const cards = Array.from(document.querySelectorAll('[data-explodable]')) as HTMLElement[];
 
   cards.forEach(card => {
     const rect = card.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
     const numSlices = Math.ceil(rect.height / SLICE_H);
+
+    // 원본 즉시 숨김 — 클론이 정확히 같은 위치에 이미 있으므로 깜빡임 없음
+    card.style.visibility = 'hidden';
 
     for (let s = 0; s < numSlices; s++) {
       const sliceTop = s * SLICE_H;
       const sliceH   = Math.min(SLICE_H, rect.height - sliceTop);
       const centerY  = rect.top + sliceTop + sliceH / 2;
 
-      // 스윕 빔 도달 타이밍
-      const sweepDelay = (centerY / H) * WAVE_MS + rnd(0, 25);
-      const fallDur    = rnd(0.7, 1.05);
-      const fallY      = H - rect.top - sliceTop + 220;
-      const rot        = (Math.random() - 0.5) * 11;
+      // 클리핑 컨테이너
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = [
+        'position:fixed',
+        `left:${rect.left}px`,
+        `top:${rect.top + sliceTop}px`,
+        `width:${rect.width}px`,
+        `height:${sliceH}px`,
+        'overflow:hidden',
+        'z-index:9999',
+        'pointer-events:none',
+        'will-change:transform,opacity',
+      ].join(';');
+
+      // 실제 카드 클론을 위로 당겨 해당 줄만 노출
+      const clone = card.cloneNode(true) as HTMLElement;
+      clone.style.cssText += ';' + [
+        'position:absolute !important',
+        `top:${-sliceTop}px !important`,
+        'left:0 !important',
+        `width:${rect.width}px !important`,
+        `height:${rect.height}px !important`,
+        'margin:0 !important',
+        'visibility:visible !important',
+        'pointer-events:none',
+        'transform:none !important',
+        'opacity:1 !important',
+      ].join(';');
+
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+      createdSlices.push(wrapper);
+
+      // 낙하 타이밍: 스윕 빔 Y위치와 동기화
+      const sweepDelay = (centerY / H) * WAVE_MS + rnd(0, 30);
+      const fallDur    = rnd(0.75, 1.1);
+      const fallY      = H - rect.top - sliceTop + 250;
+      const rot        = (Math.random() - 0.5) * 12;
       const endMs      = sweepDelay + fallDur * 1000 + 500;
       maxEndMs = Math.max(maxEndMs, endMs);
 
-      // 슬라이스는 낙하 시작 직전(~20ms 앞)에만 생성 → 브라우저 부하 분산
-      const createDelay = Math.max(0, sweepDelay - 20);
-
+      // CSS transition으로 낙하 — setTimeout 안에서 style 변경
       const t1 = setTimeout(() => {
-        // 원본 카드가 이미 사라진 경우 스킵
-        if (card.style.visibility === 'hidden' && !createdSlices.length) return;
+        wrapper.style.transition = [
+          `transform ${fallDur}s cubic-bezier(0.4,0,1,1)`,
+          `opacity 0.4s ease-in ${(fallDur * 0.45).toFixed(2)}s`,
+        ].join(',');
+        wrapper.style.transform = `translateY(${fallY}px) rotate(${rot}deg)`;
+        wrapper.style.opacity   = '0';
+      }, sweepDelay);
 
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = [
-          'position:fixed',
-          `left:${rect.left}px`,
-          `top:${rect.top + sliceTop}px`,
-          `width:${rect.width}px`,
-          `height:${sliceH}px`,
-          'overflow:hidden',
-          'z-index:9999',
-          'pointer-events:none',
-          'will-change:transform,opacity',
-        ].join(';');
-
-        const clone = card.cloneNode(true) as HTMLElement;
-        clone.style.cssText += [
-          'position:absolute !important',
-          `top:${-sliceTop}px !important`,
-          'left:0 !important',
-          `width:${rect.width}px !important`,
-          `height:${rect.height}px !important`,
-          'margin:0 !important',
-          'visibility:visible !important',
-          'pointer-events:none',
-        ].join(';');
-
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
-        createdSlices.push(wrapper);
-
-        // 원본은 첫 슬라이스 생성 시점에 숨김
-        if (s === 0) card.style.visibility = 'hidden';
-
-        // 다음 프레임에 낙하 시작 (transition 인식을 위해 rAF 1회 대기)
-        requestAnimationFrame(() => {
-          wrapper.style.transition = [
-            `transform ${fallDur}s cubic-bezier(0.4,0,1,1)`,
-            `opacity 0.4s ease-in ${(fallDur * 0.5).toFixed(2)}s`,
-          ].join(',');
-          wrapper.style.transform = `translateY(${fallY}px) rotate(${rot}deg)`;
-          wrapper.style.opacity = '0';
-        });
-
-        const t2 = setTimeout(() => wrapper.remove(), fallDur * 1000 + 600);
-        allTimers.push(t2);
-      }, createDelay);
-
-      allTimers.push(t1);
+      const t2 = setTimeout(() => wrapper.remove(), endMs + 50);
+      allTimers.push(t1, t2);
     }
   });
 
@@ -127,18 +123,18 @@ export function fireExplosion(
     vx:number; vy:number; rotV:number;
     color:string; delay:number; duration:number; isCircle:boolean;
   }
-  const sparks: Spark[] = Array.from({ length: 130 }, () => {
+  const sparks: Spark[] = Array.from({ length: 120 }, () => {
     const angle = rnd(0, Math.PI * 2);
     const spd   = rnd(250, 1800);
     const size  = rnd(2, 11);
     return {
-      cx: W / 2 + rnd(-100, 100), cy: H / 2 + rnd(-100, 100),
+      cx: W / 2 + rnd(-120, 120), cy: H / 2 + rnd(-120, 120),
       w: size,
       vx: Math.cos(angle) * spd,
       vy: Math.sin(angle) * spd - rnd(0, 250),
       rotV: rnd(-22, 22),
       color: pick(SPARK_COLORS),
-      delay: rnd(0, 0.05), duration: rnd(0.8, 2.2),
+      delay: rnd(0, 0.05), duration: rnd(0.8, 2.1),
       isCircle: Math.random() > 0.35,
     };
   });
@@ -156,7 +152,7 @@ export function fireExplosion(
     // 플래시
     if (t < 0.2) {
       const ft = t / 0.2;
-      ctx.fillStyle = `rgba(255,230,130,${(0.8 * (1 - ft * ft)).toFixed(3)})`;
+      ctx.fillStyle = `rgba(255,230,130,${(0.8*(1-ft*ft)).toFixed(3)})`;
       ctx.fillRect(0, 0, W, H);
     }
 
@@ -166,11 +162,11 @@ export function fireExplosion(
       const lineAlpha = Math.max(0, 1 - tMs / (WAVE_MS + 150));
       const grad = ctx.createLinearGradient(0, sweepY - 70, 0, sweepY + 10);
       grad.addColorStop(0,   'rgba(255,200,50,0)');
-      grad.addColorStop(0.6, `rgba(255,220,80,${(lineAlpha * 0.4).toFixed(3)})`);
-      grad.addColorStop(1,   `rgba(255,255,160,${(lineAlpha * 0.9).toFixed(3)})`);
+      grad.addColorStop(0.6, `rgba(255,220,80,${(lineAlpha*0.4).toFixed(3)})`);
+      grad.addColorStop(1,   `rgba(255,255,160,${(lineAlpha*0.9).toFixed(3)})`);
       ctx.fillStyle = grad;
       ctx.fillRect(0, sweepY - 70, W, 80);
-      ctx.strokeStyle = `rgba(255,255,200,${(lineAlpha * 0.95).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(255,255,200,${(lineAlpha*0.95).toFixed(3)})`;
       ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.moveTo(0, sweepY); ctx.lineTo(W, sweepY); ctx.stroke();
     }
@@ -187,17 +183,17 @@ export function fireExplosion(
       const px  = s.cx + s.vx * pt;
       const py  = s.cy + s.vy * pt + 0.5 * GRAVITY * pt * pt;
       const rot = s.rotV * pt;
-      const alp = prog < 0.6 ? 1 : Math.max(0, 1 - (prog - 0.6) / 0.4);
-      const sc  = prog > 0.8 ? Math.max(0.01, 1 - (prog - 0.8) / 0.2) : 1;
+      const alp = prog < 0.6 ? 1 : Math.max(0, 1-(prog-0.6)/0.4);
+      const sc  = prog > 0.8 ? Math.max(0.01, 1-(prog-0.8)/0.2) : 1;
 
       ctx.save();
       ctx.globalAlpha = alp;
       ctx.translate(px, py); ctx.rotate(rot); ctx.scale(sc, sc);
       ctx.fillStyle = s.color;
       if (s.isCircle) {
-        ctx.beginPath(); ctx.arc(0, 0, s.w / 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, s.w/2, 0, Math.PI*2); ctx.fill();
       } else {
-        ctx.fillRect(-s.w / 2, -s.w / 2, s.w, s.w);
+        ctx.fillRect(-s.w/2, -s.w/2, s.w, s.w);
       }
       ctx.restore();
     }
@@ -208,7 +204,6 @@ export function fireExplosion(
 
   rafId = requestAnimationFrame(animate);
 
-  // 모든 슬라이스 낙하 완료 후 다음 화면으로
   const doneTimer = setTimeout(onDone, Math.max(maxEndMs, 2800) + 300);
   allTimers.push(doneTimer);
 
