@@ -350,6 +350,10 @@ export default function Home() {
       if (progress >= 100) {
         clearInterval(interval);
         setTimeout(() => {
+          // 폭파 시 직접 설정한 visibility:hidden 을 React가 모르므로 여기서 복원
+          document.querySelectorAll('[data-explodable]').forEach(
+            el => { (el as HTMLElement).style.visibility = ''; }
+          );
           setExplosionPhase('idle');
           setRebuildProgress(0);
         }, 600);
