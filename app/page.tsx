@@ -474,7 +474,8 @@ export default function Home() {
       style={{
         opacity: explosionPhase === 'idle' ? 1 : 0,
         pointerEvents: explosionPhase !== 'idle' ? 'none' : undefined,
-        transition: 'none',
+        // 폭파 시 즉시 숨기지 않고 서서히 페이드 — 캔버스 조각들이 실제 UI 위에서 무너지는 것처럼 보임
+        transition: explosionPhase === 'exploding' ? 'opacity 0.8s ease-in 0.1s' : 'none',
       }}
     >
 
