@@ -1,8 +1,7 @@
 const SPARK_COLORS = ['#f97316','#fbbf24','#ef4444','#fb923c','#fcd34d','#f472b6','#a78bfa','#34d399','#fff','#60a5fa'];
 
-const SLICE_H  = 44;    // 슬라이스 높이 — 너무 작으면 클론이 많아져 렉
-const WAVE_MS  = 1300;  // 스윕 빔 내려오는 시간(ms)
-const GRAVITY  = 2200;
+const SLICE_H = 40;   // 슬라이스 높이 — 건물 "층" 느낌
+const GRAVITY = 2400;
 
 function rnd(min: number, max: number) { return min + Math.random() * (max - min); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -19,24 +18,22 @@ export function fireExplosion(
   shakeStyle.textContent = `
     @keyframes __xshake {
       0%,100% { transform:translate(0,0) rotate(0deg); }
-      7%   { transform:translate(-20px,14px) rotate(-1.3deg); }
-      16%  { transform:translate(20px,-14px) rotate(1.3deg); }
-      28%  { transform:translate(-15px,17px) rotate(-0.9deg); }
-      40%  { transform:translate(15px,-11px) rotate(0.9deg); }
-      54%  { transform:translate(-10px,12px); }
-      68%  { transform:translate(10px,-8px); }
-      83%  { transform:translate(-5px,5px); }
-      94%  { transform:translate(3px,-2px); }
+      6%  { transform:translate(-22px,16px) rotate(-1.5deg); }
+      14% { transform:translate(22px,-16px) rotate(1.5deg); }
+      24% { transform:translate(-18px,20px) rotate(-1deg); }
+      35% { transform:translate(18px,-13px) rotate(1deg); }
+      50% { transform:translate(-12px,14px); }
+      65% { transform:translate(12px,-9px); }
+      80% { transform:translate(-6px,6px); }
+      93% { transform:translate(4px,-3px); }
     }
   `;
   document.head.appendChild(shakeStyle);
-  document.body.style.animation = '__xshake 0.75s ease-out forwards';
-  const shakeTimer = setTimeout(() => { document.body.style.animation = ''; }, 800);
+  document.body.style.animation = '__xshake 0.8s ease-out forwards';
+  const shakeTimer = setTimeout(() => { document.body.style.animation = ''; }, 900);
 
-  // ── DOM 슬라이스: React 렌더 전에 동기적으로 전부 생성 ─────────
-  // 클론이 먼저 DOM에 존재 → 원본이 사라져도 화면에 보임
-  const createdSlices: HTMLElement[] = [];
   const allTimers: ReturnType<typeof setTimeout>[] = [];
+  const createdSlices: HTMLElement[] = [];
   let maxEndMs = 0;
 
   const cards = Array.from(document.querySelectorAll('[data-explodable]')) as HTMLElement[];
@@ -47,13 +44,30 @@ export function fireExplosion(
 
     const numSlices = Math.ceil(rect.height / SLICE_H);
 
-    // 원본 즉시 숨김 — 클론이 정확히 같은 위치에 이미 있으므로 깜빡임 없음
+    // 카드마다 랜덤 기울기 방향 — 일부는 왼쪽, 일부는 오른쪽으로 쓰러짐
+    const leanDir    = Math.random() > 0.5 ? 1 : -1;
+    const cardDelay  = rnd(0, 120); // 카드마다 약간씩 다른 시작 타이밍
+
+    // 원본 즉시 숨김
     card.style.visibility = 'hidden';
 
     for (let s = 0; s < numSlices; s++) {
       const sliceTop = s * SLICE_H;
       const sliceH   = Math.min(SLICE_H, rect.height - sliceTop);
-      const centerY  = rect.top + sliceTop + sliceH / 2;
+
+      // ── 핵심: 아래 행(row)부터 먼저 무너짐 ──
+      // rowFromBottom=0 이 제일 아래 → delay 가장 짧음
+      const rowFromBottom = numSlices - 1 - s;
+      const rowDelay   = rowFromBottom * rnd(55, 90); // 각 층마다 딜레이 누적
+      const jitter     = rnd(-25, 40);                // 랜덤 덜컹거림
+      const fallDelay  = cardDelay + rowDelay + jitter;
+
+      const fallDur    = rnd(0.55, 0.85);
+      const fallY      = H - rect.top - sliceTop + 250;
+      const lateralX   = leanDir * rnd(40, 180);
+      const finalRot   = leanDir * rnd(6, 18);
+      const endMs      = fallDelay + fallDur * 1000 + 400;
+      maxEndMs = Math.max(maxEndMs, endMs);
 
       // 클리핑 컨테이너
       const wrapper = document.createElement('div');
@@ -69,7 +83,6 @@ export function fireExplosion(
         'will-change:transform,opacity',
       ].join(';');
 
-      // 실제 카드 클론을 위로 당겨 해당 줄만 노출
       const clone = card.cloneNode(true) as HTMLElement;
       clone.style.cssText += ';' + [
         'position:absolute !important',
@@ -88,30 +101,29 @@ export function fireExplosion(
       document.body.appendChild(wrapper);
       createdSlices.push(wrapper);
 
-      // 낙하 타이밍: 스윕 빔 Y위치와 동기화
-      const sweepDelay = (centerY / H) * WAVE_MS + rnd(0, 30);
-      const fallDur    = rnd(0.75, 1.1);
-      const fallY      = H - rect.top - sliceTop + 250;
-      const rot        = (Math.random() - 0.5) * 12;
-      const endMs      = sweepDelay + fallDur * 1000 + 500;
-      maxEndMs = Math.max(maxEndMs, endMs);
+      // 1단계: 낙하 직전 살짝 흔들림 (건물이 삐걱거리는 느낌)
+      const wobbleDelay = Math.max(0, fallDelay - 90);
+      const t0 = setTimeout(() => {
+        wrapper.style.transition = 'transform 0.09s ease-out';
+        wrapper.style.transform  = `translateY(2px) rotate(${leanDir * 1.2}deg)`;
+      }, wobbleDelay);
 
-      // CSS transition으로 낙하 — setTimeout 안에서 style 변경
+      // 2단계: 본 낙하
       const t1 = setTimeout(() => {
         wrapper.style.transition = [
-          `transform ${fallDur}s cubic-bezier(0.4,0,1,1)`,
-          `opacity 0.4s ease-in ${(fallDur * 0.45).toFixed(2)}s`,
+          `transform ${fallDur}s cubic-bezier(0.6,0,1,1)`,
+          `opacity 0.35s ease-in ${(fallDur * 0.48).toFixed(2)}s`,
         ].join(',');
-        wrapper.style.transform = `translateY(${fallY}px) rotate(${rot}deg)`;
+        wrapper.style.transform = `translateY(${fallY}px) translateX(${lateralX}px) rotate(${finalRot}deg)`;
         wrapper.style.opacity   = '0';
-      }, sweepDelay);
+      }, fallDelay);
 
       const t2 = setTimeout(() => wrapper.remove(), endMs + 50);
-      allTimers.push(t1, t2);
+      allTimers.push(t0, t1, t2);
     }
   });
 
-  // ── 캔버스: 플래시 + 스윕 빔 + 스파크 ────────────────────────
+  // ── 캔버스: 플래시 + 충격파 링 + 스파크 ──────────────────────
   const canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;';
   canvas.width = W; canvas.height = H;
@@ -123,18 +135,18 @@ export function fireExplosion(
     vx:number; vy:number; rotV:number;
     color:string; delay:number; duration:number; isCircle:boolean;
   }
-  const sparks: Spark[] = Array.from({ length: 120 }, () => {
+  const sparks: Spark[] = Array.from({ length: 130 }, () => {
     const angle = rnd(0, Math.PI * 2);
-    const spd   = rnd(250, 1800);
-    const size  = rnd(2, 11);
+    const spd   = rnd(300, 2000);
+    const size  = rnd(2, 12);
     return {
-      cx: W / 2 + rnd(-120, 120), cy: H / 2 + rnd(-120, 120),
+      cx: W/2 + rnd(-100,100), cy: H/2 + rnd(-100,100),
       w: size,
       vx: Math.cos(angle) * spd,
-      vy: Math.sin(angle) * spd - rnd(0, 250),
-      rotV: rnd(-22, 22),
+      vy: Math.sin(angle) * spd - rnd(0, 280),
+      rotV: rnd(-22,22),
       color: pick(SPARK_COLORS),
-      delay: rnd(0, 0.05), duration: rnd(0.8, 2.1),
+      delay: rnd(0,0.05), duration: rnd(0.8,2.2),
       isCircle: Math.random() > 0.35,
     };
   });
@@ -145,34 +157,36 @@ export function fireExplosion(
 
   const animate = (now: number) => {
     if (rafDone) return;
-    const t   = (now - startTime) / 1000;
-    const tMs = t * 1000;
+    const t = (now - startTime) / 1000;
     ctx.clearRect(0, 0, W, H);
 
     // 플래시
-    if (t < 0.2) {
-      const ft = t / 0.2;
-      ctx.fillStyle = `rgba(255,230,130,${(0.8*(1-ft*ft)).toFixed(3)})`;
+    if (t < 0.22) {
+      const ft = t / 0.22;
+      ctx.fillStyle = `rgba(255,230,130,${(0.85*(1-ft*ft)).toFixed(3)})`;
       ctx.fillRect(0, 0, W, H);
     }
 
-    // 스윕 빔
-    if (tMs < WAVE_MS + 150) {
-      const sweepY    = Math.min(H, (tMs / WAVE_MS) * H);
-      const lineAlpha = Math.max(0, 1 - tMs / (WAVE_MS + 150));
-      const grad = ctx.createLinearGradient(0, sweepY - 70, 0, sweepY + 10);
-      grad.addColorStop(0,   'rgba(255,200,50,0)');
-      grad.addColorStop(0.6, `rgba(255,220,80,${(lineAlpha*0.4).toFixed(3)})`);
-      grad.addColorStop(1,   `rgba(255,255,160,${(lineAlpha*0.9).toFixed(3)})`);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, sweepY - 70, W, 80);
-      ctx.strokeStyle = `rgba(255,255,200,${(lineAlpha*0.95).toFixed(3)})`;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(0, sweepY); ctx.lineTo(W, sweepY); ctx.stroke();
+    // 충격파 링 (0~0.7s)
+    if (t < 0.7) {
+      const sw  = t / 0.7;
+      const maxR = Math.max(W, H) * 0.6;
+      const a1  = Math.max(0, (1-sw) * 0.7);
+      ctx.strokeStyle = `rgba(255,190,60,${a1.toFixed(3)})`;
+      ctx.lineWidth   = Math.max(1, (1-sw) * 20);
+      ctx.beginPath(); ctx.arc(W/2, H/2, sw*maxR, 0, Math.PI*2); ctx.stroke();
+
+      if (t < 0.4) {
+        const sw2 = t / 0.4;
+        const a2  = Math.max(0, (1-sw2) * 0.45);
+        ctx.strokeStyle = `rgba(255,255,255,${a2.toFixed(3)})`;
+        ctx.lineWidth   = Math.max(1, (1-sw2) * 9);
+        ctx.beginPath(); ctx.arc(W/2, H/2, sw2*maxR*0.5, 0, Math.PI*2); ctx.stroke();
+      }
     }
 
     // 스파크
-    let anyActive = t < 0.2 || tMs < WAVE_MS;
+    let anyActive = t < 0.22 || t < 0.7;
     for (const s of sparks) {
       const pt = t - s.delay;
       if (pt <= 0) { anyActive = true; continue; }
@@ -188,12 +202,12 @@ export function fireExplosion(
 
       ctx.save();
       ctx.globalAlpha = alp;
-      ctx.translate(px, py); ctx.rotate(rot); ctx.scale(sc, sc);
+      ctx.translate(px,py); ctx.rotate(rot); ctx.scale(sc,sc);
       ctx.fillStyle = s.color;
       if (s.isCircle) {
-        ctx.beginPath(); ctx.arc(0, 0, s.w/2, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0,0,s.w/2,0,Math.PI*2); ctx.fill();
       } else {
-        ctx.fillRect(-s.w/2, -s.w/2, s.w, s.w);
+        ctx.fillRect(-s.w/2,-s.w/2,s.w,s.w);
       }
       ctx.restore();
     }
@@ -204,7 +218,7 @@ export function fireExplosion(
 
   rafId = requestAnimationFrame(animate);
 
-  const doneTimer = setTimeout(onDone, Math.max(maxEndMs, 2800) + 300);
+  const doneTimer = setTimeout(onDone, Math.max(maxEndMs, 2500) + 300);
   allTimers.push(doneTimer);
 
   return () => {
