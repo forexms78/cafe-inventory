@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
 import { toast } from 'sonner';
 import { Item, Category, Unit, CafeUser, getStockStatus, CATEGORIES } from '@/types';
 import { getSession, saveSession, clearSession } from '@/lib/auth';
@@ -11,7 +10,6 @@ import AddItemModal from '@/components/AddItemModal';
 import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import MenuDrawer from '@/components/MenuDrawer';
-import ThemeButton from '@/components/ThemeButton';
 import ExplosionOverlay from '@/components/ExplosionOverlay';
 import { playExplosionSound } from '@/lib/sounds';
 import { fireExplosion } from '@/lib/explosion';
@@ -493,15 +491,6 @@ export default function Home() {
             </h1>
             <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
           </div>
-          <Link
-            href="/logs"
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-pink-500 border border-pink-200 rounded-full bg-white hover:bg-pink-50 transition-colors mt-1"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 3h8M2 6h6M2 9h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            로그
-          </Link>
           {(user?.role === 'owner' || user?.role === 'developer') && (
             <button
               onClick={handleExplode}
@@ -512,16 +501,21 @@ export default function Home() {
           )}
         </div>
         <div className="flex items-center gap-2">
-        <ThemeButton />
-        <button
-          onClick={() => setShowDrawer(true)}
-          className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 active:bg-pink-100 transition-colors"
-          aria-label="메뉴 열기"
-        >
-          <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
-          <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
-          <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
-        </button>
+        <div className="relative group">
+          <button
+            onClick={() => setShowDrawer(true)}
+            className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 active:bg-pink-100 transition-colors"
+            aria-label="메뉴 열기"
+          >
+            <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
+            <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
+            <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
+          </button>
+          <div className="absolute right-0 top-full mt-2 whitespace-nowrap bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            로그 · 다크모드가 여기로 이동했어요
+            <div className="absolute -top-1 right-3.5 w-2 h-2 bg-gray-800 rotate-45" />
+          </div>
+        </div>
         </div>
       </div>
 

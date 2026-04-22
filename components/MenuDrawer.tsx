@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import ThemeButton from './ThemeButton';
 import { Category } from '@/types';
 import { CafeUser } from '@/types';
 
@@ -119,6 +120,15 @@ export default function MenuDrawer({
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
           {user ? (
             <>
+              {/* 화면 설정 */}
+              <p className="text-xs text-pink-300 font-semibold px-1 pb-1 pt-1 uppercase tracking-wider">화면</p>
+              <div className="px-1 py-1.5">
+                <ThemeButton />
+              </div>
+              <MenuItem label="변경 로그" onClick={() => router.push('/logs')} />
+
+              <div className="h-px bg-pink-50 my-2" />
+
               {/* 재고 관리 그룹 */}
               <p className="text-xs text-pink-300 font-semibold px-1 pb-1 pt-1 uppercase tracking-wider">재고 관리</p>
               <MenuItem label="품목 추가" onClick={onAddItem} />
@@ -132,8 +142,6 @@ export default function MenuDrawer({
               ) : (
                 <MenuItem label="위치변경" onClick={onReorderStart} />
               )}
-
-              <MenuItem label="변경 로그" onClick={() => router.push('/logs')} />
 
               <div className="h-px bg-pink-50 my-2" />
 
