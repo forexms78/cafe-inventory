@@ -9,7 +9,9 @@ const supabase = createClient(
 export async function GET() {
   const { data, error } = await supabase.from('items').select('*').order('sort_order', { nullsFirst: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  return NextResponse.json(data, {
+    headers: { 'Cache-Control': 'no-store' },
+  });
 }
 
 export async function POST(req: NextRequest) {

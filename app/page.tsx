@@ -93,7 +93,7 @@ export default function Home() {
   }>>(new Map());
 
   const fetchItems = useCallback(async () => {
-    const res = await fetch('/api/items');
+    const res = await fetch('/api/items', { cache: 'no-store' });
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);
     setLoading(false);
