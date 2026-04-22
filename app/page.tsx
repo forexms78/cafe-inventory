@@ -105,7 +105,7 @@ export default function Home() {
 
   // 30초마다 자동 갱신
   useEffect(() => {
-    const id = setInterval(fetchItems, 30_000);
+    const id = setInterval(fetchItems, 3_600_000);
     return () => clearInterval(id);
   }, [fetchItems]);
 
