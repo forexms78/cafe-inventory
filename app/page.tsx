@@ -187,15 +187,6 @@ export default function Home() {
     setTimeout(() => setHighlightedId(null), 2500);
   };
 
-  const handleAlertClick = (item: Item) => {
-    setActiveCategory(item.category);
-    setHighlightedId(item.id);
-    setTimeout(() => {
-      document.getElementById(`item-${item.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-    setTimeout(() => setHighlightedId(null), 2500);
-  };
-
   const handleStockChange = async (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => {
     const prev = items.find(i => i.id === id)?.[field] ?? 0;
     setItems(current => current.map(i => i.id === id ? { ...i, [field]: value } : i));
@@ -620,69 +611,6 @@ export default function Home() {
             </Button>
           </div>
         )}
-      </div>
-
-      {/* 재고 부족 알림 섹션 */}
-      <div data-explodable>
-        <h2 className="text-lg font-bold text-pink-700 mb-3" style={{ fontFamily: 'var(--font-jua)' }}>
-          재고 부족 알림
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {CATEGORIES.map(category => {
-            const catItems = items.filter(i => i.category === category);
-            const dangerItems = catItems.filter(i => getStockStatus(i) === 'danger');
-            const warningItems = catItems.filter(i => getStockStatus(i) === 'warning');
-            const lowItems = [...dangerItems, ...warningItems];
-            const isOk = !loading && lowItems.length === 0;
-
-            return (
-              <div key={category} className="bg-white rounded-2xl border border-pink-100 shadow-sm overflow-hidden">
-                {/* 카테고리 헤더 */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-pink-50 bg-pink-50/50">
-                  <span className="font-bold text-pink-700 text-base" style={{ fontFamily: 'var(--font-jua)' }}>
-                    {category}
-                  </span>
-                  {!loading && isOk && (
-                    <span className="text-xs text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                      정상
-                    </span>
-                  )}
-                </div>
-
-                {/* 부족 품목 목록 (스크롤) */}
-                {!isOk && !loading && (
-                  <div className="max-h-52 overflow-y-auto divide-y divide-pink-50">
-                    {dangerItems.map(item => (
-                      <div key={item.id} onClick={() => handleAlertClick(item)}
-                        className="flex items-center justify-between px-4 py-2.5 bg-red-50/40 cursor-pointer hover:bg-red-100/60 transition-colors">
-                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
-                          <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">재고 {item.stock}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {warningItems.map(item => (
-                      <div key={item.id} onClick={() => handleAlertClick(item)}
-                        className="flex items-center justify-between px-4 py-2.5 bg-yellow-50/40 cursor-pointer hover:bg-yellow-100/60 transition-colors">
-                        <span className="text-sm text-gray-800 font-medium">{item.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400">최소 {item.min_qty}</span>
-                          <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">{item.stock} / {item.min_qty}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 정상 */}
-                {isOk && (
-                  <div className="px-4 py-2.5 text-xs text-gray-400">모든 품목이 충분합니다.</div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* 전체 초기화 확인 다이얼로그 */}
