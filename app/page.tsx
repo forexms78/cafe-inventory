@@ -103,6 +103,19 @@ export default function Home() {
     if (session) setUser(session);
   }, [fetchItems]);
 
+  // 30초마다 자동 갱신
+  useEffect(() => {
+    const id = setInterval(fetchItems, 30_000);
+    return () => clearInterval(id);
+  }, [fetchItems]);
+
+  // 탭으로 돌아올 때 즉시 갱신
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchItems(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [fetchItems]);
+
   const categoryItems = items.filter(i => i.category === activeCategory);
   const showExpiry = ['오믈렛 및 마카롱', '도쿄롤', '케익'].includes(activeCategory);
   const sortedItems = reorderMode ? reorderItems : categoryItems;
