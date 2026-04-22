@@ -126,6 +126,7 @@ export default function MenuDrawer({
                 <ThemeButton />
               </div>
               <MenuItem label="변경 로그" onClick={() => router.push('/logs')} />
+              <MenuItem label="대시보드" onClick={() => router.push('/dashboard')} />
 
               <div className="h-px bg-pink-50 my-2" />
 
