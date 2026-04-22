@@ -17,8 +17,14 @@ const notoSansKR = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "재고 관리",
-  description: "카페 재고 관리 시스템",
+  title: '재고 관리',
+  description: '디저트39 신사역점 재고관리',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: '재고관리',
+  },
 };
 
 export default function RootLayout({
