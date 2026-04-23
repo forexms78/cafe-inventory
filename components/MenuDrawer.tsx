@@ -12,8 +12,10 @@ interface Props {
   activeCategory: Category;
   minEditMode: boolean;
   reorderMode: boolean;
+  deleteMode: boolean;
   onAddItem: () => void;
   onToggleMinEdit: () => void;
+  onToggleDeleteMode: () => void;
   onReorderStart: () => void;
   onReorderSave: () => void;
   onResetConfirm: () => void;
@@ -24,8 +26,8 @@ interface Props {
 
 export default function MenuDrawer({
   open, onClose, user, activeCategory,
-  minEditMode, reorderMode,
-  onAddItem, onToggleMinEdit, onReorderStart, onReorderSave,
+  minEditMode, reorderMode, deleteMode,
+  onAddItem, onToggleMinEdit, onToggleDeleteMode, onReorderStart, onReorderSave,
   onResetConfirm, onChangePw, onLogout, onLogin,
 }: Props) {
   const router = useRouter();
@@ -137,6 +139,11 @@ export default function MenuDrawer({
                 label={minEditMode ? '최소수량 수정 완료' : '최소수량 수정'}
                 onClick={onToggleMinEdit}
                 active={minEditMode}
+              />
+              <MenuItem
+                label={deleteMode ? '삭제 모드 끄기' : '품목 삭제 모드'}
+                onClick={onToggleDeleteMode}
+                active={deleteMode}
               />
               {reorderMode ? (
                 <MenuItem label="위치변경 저장" onClick={onReorderSave} active />

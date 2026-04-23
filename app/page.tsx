@@ -73,6 +73,7 @@ export default function Home() {
   const [reorderMode, setReorderMode] = useState(false);
   const [reorderItems, setReorderItems] = useState<Item[]>([]);
   const [minEditMode, setMinEditMode] = useState(false);
+  const [deleteMode, setDeleteMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -318,7 +319,6 @@ export default function Home() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('삭제하시겠습니까?')) return;
     await fetch('/api/items', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -571,7 +571,7 @@ export default function Home() {
                 {showExpiry && (
                   <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide whitespace-nowrap">유통기한</th>
                 )}
-                {user && !reorderMode && <th className="px-4 py-3" />}
+                {user && !reorderMode && deleteMode && <th className="px-4 py-3" />}
               </tr>
             </thead>
             <SortableContext items={sortedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -602,6 +602,7 @@ export default function Home() {
                     showExpiry={showExpiry}
                     highlighted={highlightedId === item.id}
                     minEditMode={minEditMode}
+                    deleteMode={deleteMode}
                     onStockChange={handleStockChange}
                     onProductNameChange={handleProductNameChange}
                     onExpiryChange={handleExpiryChange}
@@ -659,8 +660,10 @@ export default function Home() {
         activeCategory={activeCategory}
         minEditMode={minEditMode}
         reorderMode={reorderMode}
+        deleteMode={deleteMode}
         onAddItem={() => setShowAddItem(true)}
         onToggleMinEdit={() => setMinEditMode(v => !v)}
+        onToggleDeleteMode={() => setDeleteMode(v => !v)}
         onReorderStart={handleReorderStart}
         onReorderSave={handleReorderSave}
         onResetConfirm={() => setShowResetConfirm(true)}

@@ -13,6 +13,7 @@ interface Props {
   highlighted?: boolean;
   reorderMode?: boolean;
   minEditMode?: boolean;
+  deleteMode?: boolean;
   dragHandleProps?: Record<string, unknown>;
   dragStyle?: React.CSSProperties;
   dragRef?: (el: HTMLTableRowElement | null) => void;
@@ -166,7 +167,7 @@ const StockCell = forwardRef<StockCellRef, {
 });
 
 const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
-  { item, user, showExpiry, highlighted, reorderMode, minEditMode, dragHandleProps, dragStyle, dragRef, onStockChange, onProductNameChange, onExpiryChange, onMinQtyChange, onDelete },
+  { item, user, showExpiry, highlighted, reorderMode, minEditMode, deleteMode, dragHandleProps, dragStyle, dragRef, onStockChange, onProductNameChange, onExpiryChange, onMinQtyChange, onDelete },
   ref
 ) {
   const status = getStockStatus(item);
@@ -368,10 +369,10 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
           )}
         </td>
       )}
-      {canEdit && (
+      {canEdit && deleteMode && (
         <td className="px-4 py-3 text-right">
           <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)}
-            className="text-pink-300 hover:text-red-500 hover:bg-red-50 text-xs">
+            className="text-red-400 hover:text-red-600 hover:bg-red-50 text-xs">
             삭제
           </Button>
         </td>

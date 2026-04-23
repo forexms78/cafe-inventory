@@ -10,6 +10,7 @@ interface Props {
   user: CafeUser | null;
   showExpiry: boolean;
   minEditMode?: boolean;
+  deleteMode?: boolean;
   onStockChange: (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => void;
   onProductNameChange: (id: string, name: string | null) => void;
   onExpiryChange: (id: string, expiry: string | null) => void;
