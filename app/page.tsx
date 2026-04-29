@@ -202,6 +202,14 @@ export default function Home() {
   };
 
   const handleStockChange = async (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => {
+    // 초기화 후 값을 입력하면 리셋 타이머를 즉시 확정 — 타이머가 나중에 입력값을 덮어쓰는 경쟁 조건 방지
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+      resetSnapshotRef.current = [];
+      fetch('/api/items/reset', { method: 'POST' }).catch(() => {});
+    }
+
     const prev = items.find(i => i.id === id)?.[field] ?? 0;
     setItems(current => current.map(i => i.id === id ? { ...i, [field]: value } : i));
 
