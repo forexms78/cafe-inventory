@@ -50,7 +50,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
         </ThemeProvider>
-        <Toaster position="bottom-center" richColors />
+        <Toaster position="bottom-center" richColors closeButton />
       </body>
     </html>
   );

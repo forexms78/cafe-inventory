@@ -83,6 +83,7 @@ export default function Home() {
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [explosionPhase, setExplosionPhase] = useState<'idle' | 'exploding' | 'stress' | 'rebuilding'>('idle');
   const [rebuildProgress, setRebuildProgress] = useState(0);
+  const explosionCleanupRef = useRef<(() => void) | null>(null);
   const logPendingRef = useRef<Map<string, {
     originalOldValue: number;
     latestNewValue: number;
@@ -90,6 +91,7 @@ export default function Home() {
     fired: boolean;
     logId: string | null;
   }>>(new Map());
+  const toastDismissTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/items', { cache: 'no-store' });
@@ -106,7 +108,7 @@ export default function Home() {
 
   // 30초마다 자동 갱신
   useEffect(() => {
-    const id = setInterval(fetchItems, 3_600_000);
+    const id = setInterval(fetchItems, 30_000);
     return () => clearInterval(id);
   }, [fetchItems]);
 
@@ -116,6 +118,14 @@ export default function Home() {
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [fetchItems]);
+
+  // 폭파 이펙트 진행 중 unmount 시 타이머·캔버스 정리
+  useEffect(() => {
+    return () => {
+      explosionCleanupRef.current?.();
+      explosionCleanupRef.current = null;
+    };
+  }, []);
 
   const categoryItems = items.filter(i => i.category === activeCategory);
   const showExpiry = ['오믈렛 및 마카롱', '도쿄롤', '케익'].includes(activeCategory);
@@ -283,12 +293,26 @@ export default function Home() {
       } catch {}
     }, 1500);
 
+    const toastId = `undo-${id}-${field}`;
+    const TOAST_DURATION = 5000;
+
+    const existingTimer = toastDismissTimersRef.current.get(toastId);
+    if (existingTimer) clearTimeout(existingTimer);
+
+    const dismissTimer = setTimeout(() => {
+      toast.dismiss(toastId);
+      toastDismissTimersRef.current.delete(toastId);
+    }, TOAST_DURATION);
+    toastDismissTimersRef.current.set(toastId, dismissTimer);
+
     toast(`${itemName} ${fieldLabel} ${originalOldValue} → ${value}`, {
-      id: `undo-${id}-${field}`,
-      duration: 5000,
+      id: toastId,
+      duration: TOAST_DURATION,
       action: {
         label: '실행취소',
         onClick: () => {
+          clearTimeout(toastDismissTimersRef.current.get(toastId));
+          toastDismissTimersRef.current.delete(toastId);
           setItems(current => current.map(i => i.id === id ? { ...i, [field]: originalOldValue } : i));
           fetch('/api/items', {
             method: 'PATCH',
@@ -343,7 +367,10 @@ export default function Home() {
     });
     // 캔버스를 즉시 DOM에 삽입 — React 리렌더 대기 없음
     playExplosionSound();
-    fireExplosion(rects, () => setExplosionPhase('stress'));
+    explosionCleanupRef.current = fireExplosion(rects, () => {
+      setExplosionPhase('stress');
+      explosionCleanupRef.current = null;
+    });
     setExplosionPhase('exploding');
   };
 
@@ -386,15 +413,32 @@ export default function Home() {
     toast.success('초기화가 취소되었습니다');
   };
 
+  const RESET_TOAST_ID = 'reset-all-toast';
+  const RESET_TOAST_DURATION = 15000;
+
   const handleResetAll = () => {
     resetSnapshotRef.current = items.map(i => ({ id: i.id, stock: i.stock }));
     setItems(prev => prev.map(i => ({ ...i, stock: 0 })));
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+
+    const existingResetTimer = toastDismissTimersRef.current.get(RESET_TOAST_ID);
+    if (existingResetTimer) clearTimeout(existingResetTimer);
+    const resetDismissTimer = setTimeout(() => {
+      toast.dismiss(RESET_TOAST_ID);
+      toastDismissTimersRef.current.delete(RESET_TOAST_ID);
+    }, RESET_TOAST_DURATION);
+    toastDismissTimersRef.current.set(RESET_TOAST_ID, resetDismissTimer);
+
     toast('전체 카운터 재고를 초기화했습니다', {
-      duration: 15000,
+      id: RESET_TOAST_ID,
+      duration: RESET_TOAST_DURATION,
       action: {
         label: '실행취소',
-        onClick: handleUndoReset,
+        onClick: () => {
+          clearTimeout(toastDismissTimersRef.current.get(RESET_TOAST_ID));
+          toastDismissTimersRef.current.delete(RESET_TOAST_ID);
+          handleUndoReset();
+        },
       },
     });
     undoTimerRef.current = setTimeout(async () => {
