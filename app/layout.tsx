@@ -35,9 +35,16 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
+      suppressHydrationWarning
       className={`${jua.variable} ${notoSansKR.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-pink-50/30" style={{ fontFamily: 'var(--font-noto), sans-serif' }}>
+        {/* 테마 선적용 — 첫 페인트 전에 data-theme 설정으로 색 깜빡임(FOUC) 방지 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('cafe-theme');var v=(t==='dark'||t==='usagi')?t:'pink';var d=document.documentElement;d.setAttribute('data-theme',v);d.classList.toggle('dark',v==='dark');}catch(e){}})();`,
+          }}
+        />
         <div
           className="fixed inset-0 -z-10 pointer-events-none"
           style={{
@@ -47,6 +54,8 @@ export default function RootLayout({
             opacity: 0.07,
           }}
         />
+        {/* 우사기 테마 배경 워터마크 — CSS로 우사기일 때만 표시 */}
+        <div className="usagi-watermark -z-10" aria-hidden="true" />
         <ThemeProvider>
           {children}
         </ThemeProvider>

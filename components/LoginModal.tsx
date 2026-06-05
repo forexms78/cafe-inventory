@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { saveSession } from '@/lib/auth';
 import { CafeUser } from '@/types';
+import { useTheme } from './ThemeProvider';
 
 interface Props {
   open: boolean;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function LoginModal({ open, onSuccess, onClose }: Props) {
+  const { theme } = useTheme();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,6 +38,16 @@ export default function LoginModal({ open, onSuccess, onClose }: Props) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm border-pink-100">
+        {theme === 'usagi' && (
+          <div className="flex justify-center pt-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/themes/usagi-main.webp"
+              alt="우사기"
+              className="w-24 h-24 rounded-2xl object-contain bg-white border-2 border-[#f3d2da] shadow-sm"
+            />
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle className="text-center text-pink-700">비밀번호 입력</DialogTitle>
         </DialogHeader>

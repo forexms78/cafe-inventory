@@ -400,3 +400,129 @@ html[data-theme="dark"] .border-emerald-200 {
 html[data-theme="dark"] .text-emerald-500 {
   color: #34d399;
 }
+
+/* ============================================================
+   THEME: USAGI  (data-theme="usagi") — 치이카와 우사기
+   캐릭터 본체 색만 사용: 크림 옐로(몸) + 소프트 핑크(볼)
+   + 웜 차콜(윤곽선) + 크림 화이트(카드)
+   ※ 잼/토스트/잔디 등 배경·소품 색은 쓰지 않음
+   ============================================================ */
+
+html[data-theme="usagi"] body {
+  background-color: #fdf7e0;   /* 크림 옐로 — 몸색의 옅은 버전 */
+  color: #3f3a36;              /* 웜 차콜 — 캐릭터 윤곽선 */
+}
+
+/* 배경 워터마크 — layout의 .usagi-watermark div (흰 배경은 multiply로 녹임) */
+.usagi-watermark { display: none; }
+html[data-theme="usagi"] .usagi-watermark {
+  display: block;
+  position: fixed;
+  right: -28px;
+  bottom: -28px;
+  width: min(46vw, 340px);
+  height: min(46vw, 340px);
+  background: url('/themes/usagi-main.webp') no-repeat center bottom / contain;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 헤더 캐릭터 살짝 통통 튀는 모션 */
+@keyframes usagi-bounce {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50%      { transform: translateY(-4px) rotate(1.5deg); }
+}
+
+/* 타이틀 그라디언트 (볼 핑크) */
+html[data-theme="usagi"] .theme-title {
+  background: linear-gradient(135deg, #ee8faa 0%, #d96a8a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 활성 카테고리 탭/주요 버튼 — 볼 핑크 그라디언트.
+   밝은 핑크라 흰 글씨는 대비 부족 → 웜 차콜 글씨로 대비 확보(약 7:1) */
+html[data-theme="usagi"] .bg-pink-500 {
+  background: linear-gradient(135deg, #ec8aa6 0%, #e06b94 100%);
+  box-shadow: 0 2px 8px rgba(224, 107, 148, 0.32);
+  color: #43403c;
+}
+html[data-theme="usagi"] .hover\:bg-pink-600:hover {
+  background-color: #d85f8b;
+}
+
+/* 카드 그림자 — 부드러운 핑크 */
+html[data-theme="usagi"] .shadow-sm {
+  box-shadow: 0 4px 20px rgba(236, 130, 165, 0.12), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* === 배경색 (크림 베이스 + 핑크 포인트) === */
+html[data-theme="usagi"] .bg-white { background-color: #fffef8; }
+html[data-theme="usagi"] .bg-pink-50\/70 { background-color: #fdf5e3; }
+html[data-theme="usagi"] .bg-pink-50 { background-color: #fdf5e3; }
+html[data-theme="usagi"] .bg-pink-50\/50 { background-color: #fdf5e3; }
+html[data-theme="usagi"] .bg-pink-100 { background-color: #fbe4ec; }
+html[data-theme="usagi"] .bg-gray-100 { background-color: #f3ecdc; }
+
+/* 배지/포인트 — 볼 핑크 */
+html[data-theme="usagi"] .bg-pink-200 { background-color: #f7cdda; }
+html[data-theme="usagi"] .bg-pink-400 { background-color: #f0a8bd; }
+
+/* === 텍스트 (웜 차콜 본문 + 핑크 강조) === */
+html[data-theme="usagi"] .text-gray-800 { color: #3f3a36; }
+html[data-theme="usagi"] .text-gray-700 { color: #514a44; }
+html[data-theme="usagi"] .text-gray-600 { color: #635a52; }
+html[data-theme="usagi"] .text-gray-400 { color: #9b8c7a; }
+html[data-theme="usagi"] .text-gray-300 { color: #c0b3a0; }
+
+html[data-theme="usagi"] .text-pink-700 { color: #d06088; }
+html[data-theme="usagi"] .text-pink-600 { color: #db6f93; }
+html[data-theme="usagi"] .text-pink-500 { color: #e285a3; }
+html[data-theme="usagi"] .text-pink-400 { color: #e7a9bc; }
+html[data-theme="usagi"] .text-pink-300 { color: #eeb6c8; }
+html[data-theme="usagi"] .text-pink-200 { color: #f3cdd9; }
+
+/* === 보더 (연한 핑크/크림) === */
+html[data-theme="usagi"] .border-pink-100 { border-color: #f4e0d2; }
+html[data-theme="usagi"] .border-pink-200 { border-color: #efced2; }
+html[data-theme="usagi"] .border-pink-50 { border-color: #f8ecdf; }
+html[data-theme="usagi"] .border-gray-200 { border-color: #e8ddc8; }
+html[data-theme="usagi"] .divide-pink-50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #f8ecdf;
+}
+
+/* === 인풋 === */
+html[data-theme="usagi"] input[type="text"],
+html[data-theme="usagi"] input[type="password"],
+html[data-theme="usagi"] input[type="number"],
+html[data-theme="usagi"] input:not([type]) {
+  background-color: #fffef8;
+  color: #3f3a36;
+}
+html[data-theme="usagi"] input::placeholder { color: #c0b3a0; }
+
+/* === 호버 === */
+html[data-theme="usagi"] .hover\:bg-pink-50:hover { background-color: #fbf2e0; }
+html[data-theme="usagi"] .hover\:bg-pink-100:hover { background-color: #fbe0ea; }
+
+/* === 테마 버튼 자체 === */
+html[data-theme="usagi"] .theme-button-wrap {
+  background-color: #fffef8;
+  border-color: #efced2;
+}
+html[data-theme="usagi"] .theme-button-wrap .bg-pink-100 { background-color: #fbe4ec; }
+
+/* === 드로어 그림자 === */
+html[data-theme="usagi"] .shadow-2xl {
+  box-shadow: -4px 0 32px rgba(190, 130, 150, 0.18);
+}
+
+/* === 상태색 — 부족/주의 배경을 크림 톤에 맞춤
+   (정상=emerald 등 기능적 의미가 있는 상태색은 그대로 유지) === */
+html[data-theme="usagi"] .bg-red-50 { background-color: #fdeef0; }
+html[data-theme="usagi"] .bg-yellow-50 { background-color: #fbf4e0; }
+html[data-theme="usagi"] .bg-red-50\/40 { background-color: rgba(253, 238, 240, 0.7); }
+html[data-theme="usagi"] .bg-yellow-50\/40 { background-color: rgba(251, 244, 224, 0.7); }
+html[data-theme="usagi"] .bg-red-50\/50 { background-color: rgba(253, 238, 240, 0.8); }

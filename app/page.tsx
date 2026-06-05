@@ -10,6 +10,7 @@ import AddItemModal from '@/components/AddItemModal';
 import LoginModal from '@/components/LoginModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import MenuDrawer from '@/components/MenuDrawer';
+import { useTheme } from '@/components/ThemeProvider';
 import ExplosionOverlay from '@/components/ExplosionOverlay';
 import { playExplosionSound } from '@/lib/sounds';
 import { fireExplosion } from '@/lib/explosion';
@@ -62,6 +63,7 @@ function getShortName(name: string, groupLabel: string): string {
 }
 
 export default function Home() {
+  const { theme } = useTheme();
   const [items, setItems] = useState<Item[]>([]);
   const [activeCategory, setActiveCategory] = useState<Category>('파우더');
   const [user, setUser] = useState<CafeUser | null>(null);
@@ -541,6 +543,16 @@ export default function Home() {
       {/* 헤더 */}
       <div data-explodable className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
+          {theme === 'usagi' && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/themes/usagi-main.webp"
+              alt="우사기"
+              width={64}
+              height={64}
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-contain bg-white border-2 border-[#f3d2da] shadow-sm shrink-0 animate-[usagi-bounce_2.4s_ease-in-out_infinite]"
+            />
+          )}
           <div>
             <h1 className="text-4xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
               재고관리
