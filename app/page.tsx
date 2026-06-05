@@ -530,7 +530,7 @@ export default function Home() {
       )}
       <ExplosionOverlay visible={explosionPhase === 'rebuilding'} progress={rebuildProgress} />
     <main
-      className="max-w-4xl mx-auto px-4 py-6 w-full"
+      className="max-w-4xl mx-auto px-4 pt-6 pb-32 w-full"
       style={{
         // opacity는 건드리지 않음 — 카드는 cloneNode 후 개별 visibility:hidden으로 처리
         // stress/rebuilding 단계에서는 그 화면이 z-index로 전체를 덮음
