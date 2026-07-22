@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { Item, CATEGORIES, getStockStatus } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 async function getItems(): Promise<Item[]> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
