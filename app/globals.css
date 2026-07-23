@@ -230,6 +230,10 @@ html[data-theme="usagi"] .theme-jua {
 .focus\:ring-pink-300:focus,
 .focus\:ring-pink-400:focus { --tw-ring-color: color-mix(in srgb, var(--ink) 35%, transparent); }
 .focus\:border-pink-400:focus { border-color: var(--ink); }
+/* 다크는 토큰 미재정의 방식이라 --ink 폴백(#101215)이 어두운 인풋 배경에 묻힘 — 포커스 표시 별도 지정 */
+html[data-theme="dark"] .focus\:border-pink-400:focus { border-color: #f472b6; }
+html[data-theme="dark"] .focus\:ring-pink-300:focus,
+html[data-theme="dark"] .focus\:ring-pink-400:focus { --tw-ring-color: rgba(244, 114, 182, 0.4); }
 
 /* --- 상태색: 부족 danger --- */
 .text-red-700, .text-red-600, .text-red-500 { color: var(--danger); }
