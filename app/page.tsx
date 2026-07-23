@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { Item, Category, Unit, CafeUser } from '@/types';
+import { Item, Category, Unit, CafeUser, CATEGORIES } from '@/types';
 import { getSession } from '@/lib/auth';
 import { Plus } from 'lucide-react';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -643,7 +643,7 @@ export default function Home() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             {/* 리스트 헤더 — 행과 동일한 폭 배열 */}
-            <div className="flex items-center gap-1 px-3 py-2 bg-pink-50/70 border-b border-pink-100 text-[11px] font-bold text-pink-500 tracking-wide">
+            <div className="flex items-center gap-1 pl-3 pr-7 py-2 bg-pink-50/70 border-b border-pink-100 text-[11px] font-bold text-pink-500 tracking-wide">
               {reorderMode && <span className="w-7 shrink-0" />}
               <span className="flex-1 min-w-0 pl-1">품목</span>
               <span className="w-[132px] shrink-0 text-center">매장</span>
@@ -699,6 +699,35 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* 카테고리 인덱스 레일 — 기존 탭 상태 재사용 점프 (시안 C) */}
+      {!reorderMode && (
+        <nav
+          aria-label="카테고리 바로가기"
+          data-explodable
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-30 w-11 py-1 flex flex-col items-center lg:hidden"
+        >
+          {/* 시각 폭 32px 필, 터치 판정은 버튼 44px */}
+          <span aria-hidden className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-8 rounded-full bg-white border border-pink-100 shadow-md" />
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              aria-label={cat}
+              aria-current={activeCategory === cat}
+              className="relative w-11 h-11 flex items-center justify-center"
+            >
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors ${
+                  activeCategory === cat ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400'
+                }`}
+              >
+                {cat[0]}
+              </span>
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* 전체 초기화 확인 다이얼로그 */}
       <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>

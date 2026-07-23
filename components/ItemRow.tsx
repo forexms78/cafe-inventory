@@ -258,7 +258,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
       ref={reorderMode ? combinedRef : rowRef}
       id={`item-${item.id}`}
       style={dragStyle}
-      className={`relative flex items-center gap-1 px-3 py-2 ${ROW_COLORS[status]} transition-all hover:brightness-95 ${highlighted ? 'ring-2 ring-inset ring-pink-400 animate-pulse' : ''}`}
+      className={`relative flex items-center gap-1 pl-3 pr-7 py-0.5 min-h-[54px] ${ROW_COLORS[status]} transition-all hover:brightness-95 ${highlighted ? 'ring-2 ring-inset ring-pink-400 animate-pulse' : ''}`}
     >
       {status !== 'ok' && (
         <span aria-hidden="true" className={`absolute left-0 top-2 bottom-2 w-1 rounded-r ${BAR_COLORS[status]}`} />
