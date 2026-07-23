@@ -14,6 +14,7 @@
 
 | 버전 | 날짜 | 내용 |
 |------|------|------|
+| v2.8 | 2026-07-23 | DB 이관 — Supabase(PostgreSQL)를 Cloudflare D1(SQLite)로 전환(품목 128·로그 3,437·계정 3건 무손실 이관), supabase-js 제거, 라이브 URL cafe-inventory.bhpark-dev.workers.dev |
 | v2.7 | 2026-07-23 | 인프라 이전 — Vercel 종료로 Cloudflare Workers 배포 전환(OpenNext 어댑터, Next 16.2.11 업그레이드), 대시보드 정적 박제 버그 수정 |
 | v2.6 | 2026-06-05 | UX 개선 — 실행취소 토스트를 화면 상단으로 이동해 하단 재고 항목이 가려지던 문제 해결(되돌리기 기능은 그대로 유지) |
 | v2.5 | 2026-06-05 | 테마 추가 — 치이카와 우사기(크림 옐로 + 소프트 핑크 캐릭터 팔레트). 헤더 캐릭터·배경 워터마크·로그인 일러스트, 테마 첫 적용 시 색 깜빡임(FOUC) 방지 |
@@ -59,7 +60,7 @@ flowchart LR
 
 **품목마다 주문처 링크를 연결하기엔 관리 비용이 너무 컸습니다.** 대신 제품명을 등록해두면 🛒 버튼 하나로 쿠팡·다나와·네이버쇼핑에서 바로 검색되도록 했습니다. 재고 발견부터 주문까지 클릭 2회입니다.
 
-**여러 명이 함께 쓰는 앱이라 권한 분리가 필요했습니다.** 오너·매니저·개발자 세 역할이 있고, 오너와 개발자는 전체 기능을 쓸 수 있습니다. 재고 변경 이력은 Supabase DB에 저장되어 누가 언제 무엇을 바꿨는지 모든 기기에서 조회할 수 있고, 개발자 계정은 로그 페이지에서 개별 로그를 직접 삭제할 수 있습니다.
+**여러 명이 함께 쓰는 앱이라 권한 분리가 필요했습니다.** 오너·매니저·개발자 세 역할이 있고, 오너와 개발자는 전체 기능을 쓸 수 있습니다. 재고 변경 이력은 DB에 저장되어 누가 언제 무엇을 바꿨는지 모든 기기에서 조회할 수 있고, 개발자 계정은 로그 페이지에서 개별 로그를 직접 삭제할 수 있습니다.
 
 **실수로 버튼을 잘못 누르는 일이 생겼습니다.** 재고를 저장할 때마다 5초짜리 실행취소 toast가 나타납니다. 같은 품목을 연속으로 수정하면 1.5초 디바운스로 묶어 로그에 한 줄만 남기고, 실행취소를 누르면 처음 값으로 한 번에 되돌아가면서 해당 로그도 함께 삭제됩니다.
 
@@ -69,7 +70,7 @@ flowchart LR
 
 ## 앱의 구조
 
-Next.js App Router 기반으로, 재고 데이터와 변경 로그는 Supabase(PostgreSQL)에 저장됩니다. API Routes가 두 테이블을 각각 담당합니다.
+Next.js App Router 기반으로, 재고 데이터와 변경 로그는 Cloudflare D1(SQLite)에 저장됩니다. API Routes가 두 테이블을 각각 담당합니다.
 
 ```mermaid
 flowchart TD
@@ -81,7 +82,7 @@ flowchart TD
         Auth["/api/auth\n로그인 · 비밀번호 변경"]
     end
 
-    subgraph DB["Supabase (PostgreSQL)"]
+    subgraph DB["Cloudflare D1 (SQLite)"]
         ItemsTable["items\n품목 · 재고 · 최소수량 · 유통기한"]
         LogsTable["stock_logs\n변경자 · 이전값 · 이후값 · 시각"]
     end
@@ -128,7 +129,7 @@ erDiagram
 | Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS |
 | UI | shadcn/ui, @dnd-kit (드래그앤드롭), sonner (토스트) |
 | Backend | Next.js API Routes |
-| Database | Supabase (PostgreSQL) |
+| Database | Cloudflare D1 (SQLite) |
 | 인증 | 세션 기반 (오너/매니저 역할 분리) |
 | 배포 | Cloudflare Workers (OpenNext) |
 
@@ -145,10 +146,8 @@ erDiagram
 ```bash
 npm install
 
-# .env.local 설정
-# NEXT_PUBLIC_SUPABASE_URL=...
-# NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-# SUPABASE_SERVICE_ROLE_KEY=...
+# DB: Cloudflare D1 (wrangler.jsonc의 DB 바인딩)
+# 로컬 개발은 next.config.ts의 initOpenNextCloudflareForDev()가 로컬 D1을 연결
 
 npm run dev
 ```

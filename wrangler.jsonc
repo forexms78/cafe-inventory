@@ -7,5 +7,12 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cafe-inventory",
+      "database_id": "dbb006c4-286a-4f3c-b90c-39facd07a56b"
+    }
+  ]
 }

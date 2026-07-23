@@ -1,45 +1,62 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
+import { Item } from '@/types';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// 트러스트 바운더리: body 키를 그대로 컬럼에 쓰지 않고 화이트리스트로 제한
+const COLS = ['category', 'name', 'unit', 'min_qty', 'stock', 'pantry_stock', 'office_stock', 'expiry_date', 'purchase_url', 'product_name', 'sort_order'];
 
 export async function GET() {
-  const { data, error } = await supabase.from('items').select('*').order('sort_order', { nullsFirst: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, {
-    headers: { 'Cache-Control': 'no-store' },
-  });
+  try {
+    const { results } = await getDb()
+      .prepare('SELECT * FROM items ORDER BY sort_order NULLS LAST')
+      .all<Item>();
+    return NextResponse.json(results, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { data: maxRow } = await supabase
-    .from('items')
-    .select('sort_order')
-    .order('sort_order', { ascending: false })
-    .limit(1)
-    .single();
-  const nextOrder = (maxRow?.sort_order ?? 0) + 1;
-  const { data, error } = await supabase.from('items').insert({ ...body, sort_order: nextOrder }).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const db = getDb();
+    const maxRow = await db.prepare('SELECT MAX(sort_order) AS max FROM items').first<{ max: number | null }>();
+    const nextOrder = (maxRow?.max ?? 0) + 1;
+    const cols = COLS.filter(c => c in body && c !== 'sort_order');
+    const data = await db
+      .prepare(`INSERT INTO items (id, created_at, sort_order${cols.map(c => `, ${c}`).join('')}) VALUES (?, ?, ?${', ?'.repeat(cols.length)}) RETURNING *`)
+      .bind(crypto.randomUUID(), new Date().toISOString(), nextOrder, ...cols.map(c => body[c]))
+      .first<Item>();
+    return NextResponse.json(data);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
-  const { id, ...fields } = body;
-  const { data, error } = await supabase
-    .from('items').update(fields).eq('id', id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  const { id } = body;
+  const cols = COLS.filter(c => c in body);
+  try {
+    const data = await getDb()
+      .prepare(`UPDATE items SET ${cols.map(c => `${c} = ?`).join(', ')} WHERE id = ? RETURNING *`)
+      .bind(...cols.map(c => body[c]), id)
+      .first<Item>();
+    if (!data) return NextResponse.json({ error: 'row not found' }, { status: 500 });
+    return NextResponse.json(data);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
-  const { error } = await supabase.from('items').delete().eq('id', id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  try {
+    await getDb().prepare('DELETE FROM items WHERE id = ?').bind(id).run();
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }

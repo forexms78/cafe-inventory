@@ -1,19 +1,18 @@
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { getDb } from '@/lib/db';
 import { Item, CATEGORIES, getStockStatus } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
 async function getItems(): Promise<Item[]> {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  const { data } = await supabase
-    .from('items')
-    .select('*')
-    .order('sort_order', { nullsFirst: false });
-  return data ?? [];
+  try {
+    const { results } = await getDb()
+      .prepare('SELECT * FROM items ORDER BY sort_order NULLS LAST')
+      .all<Item>();
+    return results;
+  } catch {
+    return [];
+  }
 }
 
 export default async function DashboardPage() {

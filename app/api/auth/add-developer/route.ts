@@ -1,30 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getDb } from '@/lib/db';
 
 export async function POST() {
-  const { data: existing } = await supabase
-    .from('cafe_users')
-    .select('id')
-    .eq('role', 'developer')
-    .single();
+  const db = getDb();
+  const existing = await db
+    .prepare("SELECT id FROM cafe_users WHERE role = 'developer' LIMIT 1")
+    .first();
 
   if (existing) {
     return NextResponse.json({ error: '개발자 계정이 이미 존재합니다' }, { status: 409 });
   }
 
   const hash = await bcrypt.hash('devbhpark', 10);
-  const { error } = await supabase.from('cafe_users').insert({
-    name: '개발자',
-    role: 'developer',
-    password_hash: hash,
-  });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  try {
+    await db
+      .prepare('INSERT INTO cafe_users (id, name, role, password_hash, created_at) VALUES (?, ?, ?, ?, ?)')
+      .bind(crypto.randomUUID(), '개발자', 'developer', hash, new Date().toISOString())
+      .run();
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }

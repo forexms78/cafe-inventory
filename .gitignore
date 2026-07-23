@@ -40,6 +40,13 @@ yarn-error.log*
 /.open-next/
 cloudflare-env.d.ts
 
+# dev.bhpark 계정 격리 인증 (HOME 오버라이드용 — 커밋 금지)
+/.cf-auth/
+
+# supabase 데이터 백업 (password hash 포함 — 커밋 금지)
+/migration/*.json
+/migration/import.sql
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
