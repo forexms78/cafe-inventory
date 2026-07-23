@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Item, CafeUser, getStockStatus, Unit } from '@/types';
-import { Button } from '@/components/ui/button';
+import { Plus, Minus, ShoppingCart, Pencil } from 'lucide-react';
 import PriceCompareModal from '@/components/PriceCompareModal';
 import ExpiryModal from '@/components/ExpiryModal';
 import { playClickSound } from '@/lib/sounds';
@@ -16,7 +16,7 @@ interface Props {
   deleteMode?: boolean;
   dragHandleProps?: Record<string, unknown>;
   dragStyle?: React.CSSProperties;
-  dragRef?: (el: HTMLTableRowElement | null) => void;
+  dragRef?: (el: HTMLDivElement | null) => void;
   onStockChange: (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => void;
   onProductNameChange: (id: string, name: string | null) => void;
   onExpiryChange: (id: string, expiry: string | null) => void;
@@ -29,9 +29,14 @@ export interface ItemRowRef {
 }
 
 const ROW_COLORS = {
-  danger: 'bg-red-50 border-l-4 border-l-red-400',
-  warning: 'bg-yellow-50 border-l-4 border-l-yellow-400',
-  ok: 'bg-white border-l-4 border-l-transparent',
+  danger: 'bg-red-50',
+  warning: 'bg-yellow-50',
+  ok: 'bg-white',
+};
+
+const BAR_COLORS = {
+  danger: 'bg-red-400',
+  warning: 'bg-yellow-400',
 };
 
 const STOCK_COLORS = {
@@ -51,16 +56,17 @@ const StockCell = forwardRef<StockCellRef, {
   colorClass: string;
   canEdit: boolean;
   unit?: Unit;
+  compact?: boolean;
   onStockChange: (id: string, field: 'stock' | 'pantry_stock' | 'office_stock', value: number) => void;
   onEnterKey?: () => void;
   onTabKey?: () => void;
-}>(function StockCell({ value, field, itemId, colorClass, canEdit, unit, onStockChange, onEnterKey, onTabKey }, ref) {
+}>(function StockCell({ value, field, itemId, colorClass, canEdit, unit, compact, onStockChange, onEnterKey, onTabKey }, ref) {
   const isPercent = unit === '%';
   const maxVal = isPercent ? 100 : Infinity;
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | ReturnType<typeof setTimeout> | null>(null);
   const valueRef = useRef(value);
 
   useEffect(() => { valueRef.current = value; }, [value]);
@@ -85,10 +91,10 @@ const StockCell = forwardRef<StockCellRef, {
     const stripped = inputVal.replace('%', '').trim();
     const parsed = parseInt(stripped, 10);
     if (!isNaN(parsed) && parsed >= 0) {
-      onStockChange(itemId, field, parsed);
+      onStockChange(itemId, field, Math.min(maxVal, Math.max(0, parsed)));
     }
     setEditing(false);
-  }, [inputVal, itemId, field, onStockChange]);
+  }, [inputVal, itemId, field, onStockChange, maxVal]);
 
   const stopLongPress = useCallback(() => {
     if (intervalRef.current) {
@@ -107,13 +113,44 @@ const StockCell = forwardRef<StockCellRef, {
       }, 150);
     }, 400);
     // timeout도 정리할 수 있게 intervalRef에 저장 (약식 처리)
-    (intervalRef as React.MutableRefObject<any>).current = timeout;
-  }, [itemId, field, onStockChange]);
+    intervalRef.current = timeout;
+  }, [itemId, field, onStockChange, maxVal]);
 
-  if (!canEdit) return <span className={`text-sm ${colorClass}`}>{displayValue}</span>;
+  if (!canEdit) return <span className={`text-sm tabular-nums ${colorClass}`}>{displayValue}</span>;
+
+  const editInput = (
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode="numeric"
+      value={inputVal}
+      onChange={e => setInputVal(e.target.value)}
+      onBlur={commitEdit}
+      onKeyDown={e => {
+        if (e.key === 'Enter') { e.preventDefault(); commitEdit(); onEnterKey?.(); }
+        else if (e.key === 'Tab') { e.preventDefault(); commitEdit(); onTabKey?.(); }
+        else if (e.key === 'Escape') setEditing(false);
+      }}
+      className="w-11 h-9 text-center text-sm border border-pink-300 rounded-md outline-none focus:ring-1 focus:ring-pink-400"
+    />
+  );
+
+  // 팬트리·사무실 — 숫자만 표시, 탭하면 직접 입력 (시안 준수)
+  if (compact) {
+    return editing ? editInput : (
+      <button
+        onClick={handleClickNum}
+        data-stock-btn={field}
+        className={`min-w-11 h-11 text-sm tabular-nums ${colorClass} hover:underline underline-offset-2 cursor-text`}
+        title="클릭하여 직접 입력"
+      >
+        {displayValue}
+      </button>
+    );
+  }
 
   return (
-    <div className="flex items-center justify-center gap-1.5">
+    <div className="flex items-center justify-center gap-0.5">
       <button
         onClick={() => { playClickSound('minus'); onStockChange(itemId, field, Math.max(0, value - 1)); }}
         onMouseDown={() => startLongPress(-1)}
@@ -122,29 +159,16 @@ const StockCell = forwardRef<StockCellRef, {
         onTouchStart={() => startLongPress(-1)}
         onTouchEnd={stopLongPress}
         disabled={value <= 0}
-        className="w-6 h-6 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-sm leading-none transition-colors flex-shrink-0 select-none"
+        aria-label="감소"
+        className="w-11 h-11 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center shrink-0 select-none"
       >
-        −
+        <Minus className="w-4 h-4" />
       </button>
-      {editing ? (
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputVal}
-          onChange={e => setInputVal(e.target.value)}
-          onBlur={commitEdit}
-          onKeyDown={e => {
-            if (e.key === 'Enter') { e.preventDefault(); commitEdit(); onEnterKey?.(); }
-            else if (e.key === 'Tab') { e.preventDefault(); commitEdit(); onTabKey?.(); }
-            else if (e.key === 'Escape') setEditing(false);
-          }}
-          className="w-12 text-center text-sm border border-pink-300 rounded-md outline-none focus:ring-1 focus:ring-pink-400 py-0.5"
-        />
-      ) : (
+      {editing ? editInput : (
         <button
           onClick={handleClickNum}
           data-stock-btn={field}
-          className={`w-10 text-center text-sm ${field === 'stock' ? colorClass : 'text-gray-600 font-medium'} hover:underline underline-offset-2 cursor-text`}
+          className={`w-9 h-11 text-center text-base tabular-nums ${colorClass} hover:underline underline-offset-2 cursor-text`}
           title="클릭하여 직접 입력"
         >
           {displayValue}
@@ -158,9 +182,10 @@ const StockCell = forwardRef<StockCellRef, {
         onTouchStart={() => startLongPress(1)}
         onTouchEnd={stopLongPress}
         disabled={value >= maxVal}
-        className="w-6 h-6 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed font-bold text-sm leading-none transition-colors flex-shrink-0 select-none"
+        aria-label="증가"
+        className="w-11 h-11 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center shrink-0 select-none"
       >
-        +
+        <Plus className="w-4 h-4" />
       </button>
     </div>
   );
@@ -177,7 +202,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
   const stockRef = useRef<StockCellRef>(null);
   const pantryRef = useRef<StockCellRef>(null);
   const officeRef = useRef<StockCellRef>(null);
-  const rowRef = useRef<HTMLTableRowElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
 
   const [editingProductName, setEditingProductName] = useState(false);
   const [productNameInput, setProductNameInput] = useState('');
@@ -207,8 +232,8 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
     setEditingProductName(false);
   };
 
-  const combinedRef = useCallback((el: HTMLTableRowElement | null) => {
-    (rowRef as React.MutableRefObject<HTMLTableRowElement | null>).current = el;
+  const combinedRef = useCallback((el: HTMLDivElement | null) => {
+    (rowRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
     dragRef?.(el);
   }, [dragRef]);
 
@@ -229,37 +254,46 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
         onClose={() => setShowExpiryModal(false)}
         onSave={(expiry) => onExpiryChange(item.id, expiry)}
       />
-    <tr
+    <div
       ref={reorderMode ? combinedRef : rowRef}
       id={`item-${item.id}`}
       style={dragStyle}
-      className={`${ROW_COLORS[status]} transition-all hover:brightness-95 ${highlighted ? 'ring-2 ring-inset ring-pink-400 animate-pulse' : ''} ${reorderMode ? 'cursor-default' : ''}`}
+      className={`relative flex items-center gap-1 px-3 py-2 ${ROW_COLORS[status]} transition-all hover:brightness-95 ${highlighted ? 'ring-2 ring-inset ring-pink-400 animate-pulse' : ''}`}
     >
+      {status !== 'ok' && (
+        <span aria-hidden="true" className={`absolute left-0 top-2 bottom-2 w-1 rounded-r ${BAR_COLORS[status]}`} />
+      )}
       {reorderMode && (
-        <td className="pl-3 pr-1 py-3 text-gray-300 cursor-grab active:cursor-grabbing touch-none" {...dragHandleProps}>
+        <span
+          className="w-7 h-11 flex items-center justify-center text-gray-300 cursor-grab active:cursor-grabbing touch-none shrink-0"
+          {...dragHandleProps}
+        >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
             <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
             <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
           </svg>
-        </td>
+        </span>
       )}
-      <td className="px-2 sm:px-4 py-3 text-sm font-medium text-gray-800 max-w-[130px] sm:max-w-none">
-        <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0">
-          <span className="truncate sm:whitespace-nowrap">{item.name}</span>
+
+      {/* 품목명 + 최소·단위·유통기한 */}
+      <div className="flex-1 min-w-0 pl-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-[15px] font-semibold text-gray-800 truncate">{item.name}</span>
 
           {/* 가격비교 버튼 (product_name 있을 때) */}
           {item.product_name && (
             <button
               onClick={() => setShowPriceModal(true)}
               title="가격 비교"
-              className="text-base leading-none hover:scale-110 transition-transform flex-shrink-0"
+              aria-label="가격 비교"
+              className="text-pink-400 hover:text-pink-600 transition-colors shrink-0"
             >
-              🛒
+              <ShoppingCart className="w-4 h-4" />
             </button>
           )}
 
-          {/* 제품 상세명 편집 (매니저/오너) — 모바일에서는 숨김 */}
+          {/* 제품 상세명 편집 — 모바일에서는 숨김 */}
           {canEdit && (
             editingProductName ? (
               <input
@@ -279,37 +313,54 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
               <button
                 onClick={startProductNameEdit}
                 title={item.product_name ? '제품명 수정' : '제품명 추가'}
-                className="hidden sm:inline text-xs text-gray-300 hover:text-pink-400 transition-colors whitespace-nowrap"
+                className="hidden sm:inline-flex items-center gap-0.5 text-xs text-gray-300 hover:text-pink-400 transition-colors whitespace-nowrap"
               >
-                {item.product_name ? `✎ ${item.product_name}` : '+제품명'}
+                <Pencil className="w-3 h-3 shrink-0" />
+                {item.product_name ?? '제품명'}
               </button>
             )
           )}
         </div>
-      </td>
-      <td className="px-4 py-3 text-sm text-gray-400 text-center whitespace-nowrap">
-        {minEditMode && canEdit ? (
-          <input
-            key={`${item.id}-min`}
-            type="text"
-            defaultValue={item.min_qty}
-            onBlur={e => {
-              const val = e.target.value.trim();
-              if (val && val !== item.min_qty) onMinQtyChange?.(item.id, val);
-            }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') e.currentTarget.blur();
-              if (e.key === 'Escape') { e.currentTarget.value = item.min_qty; e.currentTarget.blur(); }
-            }}
-            className="w-14 text-center text-sm border border-pink-300 rounded-md outline-none focus:ring-1 focus:ring-pink-400 py-0.5"
-          />
-        ) : (
-          item.min_qty
-        )}
-      </td>
+        <div className="flex flex-wrap items-center gap-x-1 text-[11px] text-gray-400 mt-0.5">
+          {minEditMode && canEdit ? (
+            <label className="flex items-center gap-1">
+              최소
+              <input
+                key={`${item.id}-min`}
+                type="text"
+                defaultValue={item.min_qty}
+                onBlur={e => {
+                  const val = e.target.value.trim();
+                  if (val && val !== item.min_qty) onMinQtyChange?.(item.id, val);
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                  if (e.key === 'Escape') { e.currentTarget.value = item.min_qty; e.currentTarget.blur(); }
+                }}
+                className="w-12 text-center text-xs border border-pink-300 rounded-md outline-none focus:ring-1 focus:ring-pink-400 py-0.5"
+              />
+            </label>
+          ) : (
+            <span className="whitespace-nowrap">최소 {item.min_qty} · {unit}</span>
+          )}
+          {showExpiry && (
+            canEdit ? (
+              <button
+                onClick={() => setShowExpiryModal(true)}
+                className="text-gray-400 hover:text-pink-500 hover:underline underline-offset-2 transition-colors whitespace-nowrap"
+                title="유통기한 수정"
+              >
+                · {item.expiry_date ?? '+ 유통기한'}
+              </button>
+            ) : (
+              <span className="whitespace-nowrap">· {item.expiry_date ?? '-'}</span>
+            )
+          )}
+        </div>
+      </div>
 
-      {/* 재고 */}
-      <td className="px-2 py-3 text-center">
+      {/* 매장 — 44px 스테퍼 */}
+      <div className="w-[132px] shrink-0 flex justify-center">
         <StockCell
           ref={stockRef}
           value={item.stock}
@@ -322,10 +373,10 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
           onEnterKey={() => pantryRef.current?.startEditing()}
           onTabKey={() => pantryRef.current?.startEditing()}
         />
-      </td>
+      </div>
 
       {/* 팬트리 */}
-      <td className="px-2 py-3 text-center">
+      <div className="w-11 shrink-0 flex justify-center">
         <StockCell
           ref={pantryRef}
           value={item.pantry_stock ?? 0}
@@ -333,14 +384,15 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
           itemId={item.id}
           colorClass="text-gray-600 font-medium"
           canEdit={canEdit}
+          compact
           onStockChange={onStockChange}
           onEnterKey={() => officeRef.current?.startEditing()}
           onTabKey={() => officeRef.current?.startEditing()}
         />
-      </td>
+      </div>
 
       {/* 사무실 */}
-      <td className="px-2 py-3 text-center">
+      <div className="w-11 shrink-0 flex justify-center">
         <StockCell
           ref={officeRef}
           value={item.office_stock ?? 0}
@@ -348,36 +400,22 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
           itemId={item.id}
           colorClass="text-gray-600 font-medium"
           canEdit={canEdit}
+          compact
           onStockChange={onStockChange}
           onEnterKey={goToNextRowStock}
           onTabKey={goToNextRowStock}
         />
-      </td>
+      </div>
 
-      {showExpiry && (
-        <td className="px-4 py-3 text-sm text-center whitespace-nowrap min-w-[90px]">
-          {canEdit ? (
-            <button
-              onClick={() => setShowExpiryModal(true)}
-              className="text-gray-400 hover:text-pink-500 hover:underline underline-offset-2 transition-colors"
-              title="유통기한 수정"
-            >
-              {item.expiry_date ?? '+ 입력'}
-            </button>
-          ) : (
-            <span className="text-gray-400">{item.expiry_date ?? '-'}</span>
-          )}
-        </td>
-      )}
       {canEdit && deleteMode && (
-        <td className="px-4 py-3 text-right">
-          <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)}
-            className="text-red-400 hover:text-red-600 hover:bg-red-50 text-xs">
-            삭제
-          </Button>
-        </td>
+        <button
+          onClick={() => onDelete(item.id)}
+          className="w-12 h-11 shrink-0 text-xs font-medium text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        >
+          삭제
+        </button>
       )}
-    </tr>
+    </div>
     </>
   );
 });

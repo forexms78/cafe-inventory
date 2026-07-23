@@ -123,6 +123,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* 한국어 줄바꿈: 단어 단위 유지 + 넘칠 때만 강제 줄바꿈 (시안 B 규칙) */
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
   html {
     @apply font-sans;
@@ -526,3 +529,7 @@ html[data-theme="usagi"] .bg-yellow-50 { background-color: #fbf4e0; }
 html[data-theme="usagi"] .bg-red-50\/40 { background-color: rgba(253, 238, 240, 0.7); }
 html[data-theme="usagi"] .bg-yellow-50\/40 { background-color: rgba(251, 244, 224, 0.7); }
 html[data-theme="usagi"] .bg-red-50\/50 { background-color: rgba(253, 238, 240, 0.8); }
+
+/* 가로 스크롤 칩 레일 — 스크롤바 숨김 (시안 B no-sb) */
+.no-sb::-webkit-scrollbar { display: none; }
+.no-sb { scrollbar-width: none; }

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { X } from 'lucide-react';
 import { getSession } from '@/lib/auth';
 import { Item } from '@/types';
 
@@ -196,21 +197,12 @@ export default function LogsPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6 w-full">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => router.push('/')}
-          aria-label="홈으로"
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-pink-50 text-pink-400 transition-colors"
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        <h1 className="text-2xl font-bold text-pink-700" style={{ fontFamily: 'var(--font-jua)' }}>
-          재고 변경 로그
+      {/* 헤더 — 탭바가 페이지 이동을 담당하므로 뒤로가기 버튼 없음 */}
+      <div className="flex items-end justify-between mb-6">
+        <h1 className="text-2xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
+          기록
         </h1>
-        <span className="text-xs text-gray-400 ml-auto bg-pink-50 px-2.5 py-1 rounded-full">
+        <span className="text-xs text-gray-400 bg-pink-50 px-2.5 py-1 rounded-full">
           {filteredLogs.length}건
         </span>
       </div>
@@ -235,39 +227,39 @@ export default function LogsPage() {
         />
       </div>
 
-      {/* 필터 */}
-      <div className="bg-white rounded-2xl border border-pink-100 shadow-sm p-4 mb-6 space-y-3">
+      {/* 필터 — 시안 B: 배경 위 칩 레일(가로 스크롤) */}
+      <div className="mb-6 space-y-2">
         <input
           type="text"
           placeholder="품목명 검색..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full border border-pink-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-300 placeholder-pink-200"
+          className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-300 placeholder-pink-200"
         />
 
-        <div className="flex gap-1.5 flex-wrap items-center">
+        <div className="flex gap-1.5 items-center overflow-x-auto no-sb -mx-4 px-4">
           {DATE_OPTIONS.map(o => (
             <button
               key={o.key}
               onClick={() => setDateRange(o.key)}
-              className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+              className={`h-9 px-3.5 shrink-0 text-xs rounded-full border transition-colors ${
                 dateRange === o.key
-                  ? 'bg-pink-500 text-white border-pink-500'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-pink-300'
+                  ? 'bg-pink-500 text-white border-pink-500 font-bold'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-pink-300 font-medium'
               }`}
             >
               {o.label}
             </button>
           ))}
-          <span className="w-px h-4 bg-gray-200 mx-0.5" />
+          <span className="w-px h-5 bg-pink-100 mx-0.5 shrink-0" />
           {FIELD_OPTIONS.map(o => (
             <button
               key={o.key}
               onClick={() => setFieldFilter(o.key)}
-              className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+              className={`h-9 px-3.5 shrink-0 text-xs rounded-full border transition-colors ${
                 fieldFilter === o.key
-                  ? 'bg-pink-500 text-white border-pink-500'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-pink-300'
+                  ? 'bg-pink-500 text-white border-pink-500 font-bold'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-pink-300 font-medium'
               }`}
             >
               {o.label}
@@ -275,18 +267,18 @@ export default function LogsPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <select
             value={userFilter}
             onChange={e => setUserFilter(e.target.value)}
-            className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-pink-300 bg-white"
+            className="h-9 text-xs border border-gray-200 rounded-full px-3 text-gray-600 focus:outline-none focus:ring-1 focus:ring-pink-300 bg-white"
           >
             <option value="all">전체 사용자</option>
             {users.map(u => <option key={u} value={u}>{u}</option>)}
           </select>
           <button
             onClick={() => setAnomalyOnly(v => !v)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+            className={`h-9 px-3.5 text-xs font-medium rounded-full border transition-colors ${
               anomalyOnly
                 ? 'bg-red-500 text-white border-red-500'
                 : 'bg-white text-gray-500 border-gray-200 hover:border-red-300'
@@ -310,9 +302,10 @@ export default function LogsPage() {
             </div>
             <button
               onClick={() => setSelectedItem(null)}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-pink-100 text-pink-400 transition-colors text-sm"
+              aria-label="타임라인 닫기"
+              className="w-11 h-11 -mr-2 flex items-center justify-center rounded-full hover:bg-pink-100 text-pink-400 transition-colors shrink-0"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
           </div>
           {itemTimeline.length === 0 ? (
@@ -346,8 +339,15 @@ export default function LogsPage() {
 
       {/* 로그 목록 */}
       {filteredLogs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-pink-100 py-16 text-center">
-          <p className="text-sm text-gray-300">조건에 맞는 이력이 없습니다</p>
+        <div className="bg-white rounded-2xl border border-pink-100 py-16 text-center px-4">
+          {logs.length === 0 ? (
+            <>
+              <p className="text-sm text-gray-400">아직 변경 기록이 없습니다</p>
+              <p className="text-xs text-gray-300 mt-1">재고 탭에서 수량을 바꾸면 여기에 쌓여요</p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-400">조건에 맞는 이력이 없습니다</p>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -376,10 +376,11 @@ export default function LogsPage() {
                           {isDeveloper && (
                             <button
                               onClick={() => handleDeleteLog(log.id)}
-                              className="text-xs text-gray-300 hover:text-red-400 transition-colors px-1"
+                              aria-label="로그 삭제"
                               title="로그 삭제"
+                              className="w-9 h-9 -mr-1.5 flex items-center justify-center rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
                             >
-                              ✕
+                              <X className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -428,10 +429,11 @@ export default function LogsPage() {
                         {isDeveloper && (
                           <button
                             onClick={() => handleDeleteLog(log.id)}
-                            className="text-xs text-gray-300 hover:text-red-400 transition-colors px-1 self-center"
+                            aria-label="로그 삭제"
                             title="로그 삭제"
+                            className="w-9 h-9 -mr-1.5 flex items-center justify-center rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors self-center shrink-0"
                           >
-                            ✕
+                            <X className="w-4 h-4" />
                           </button>
                         )}
                       </div>

@@ -1,15 +1,14 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { Item, Category, Unit, CafeUser, getStockStatus, CATEGORIES } from '@/types';
-import { getSession, saveSession, clearSession } from '@/lib/auth';
+import { Item, Category, Unit, CafeUser } from '@/types';
+import { getSession } from '@/lib/auth';
+import { Plus } from 'lucide-react';
 import CategoryTabs from '@/components/CategoryTabs';
+import LowStockBanner from '@/components/LowStockBanner';
 import ItemRow from '@/components/ItemRow';
 import SortableItemRow from '@/components/SortableItemRow';
 import AddItemModal from '@/components/AddItemModal';
-import LoginModal from '@/components/LoginModal';
-import ChangePasswordModal from '@/components/ChangePasswordModal';
-import MenuDrawer from '@/components/MenuDrawer';
 import { useTheme } from '@/components/ThemeProvider';
 import ExplosionOverlay from '@/components/ExplosionOverlay';
 import { playExplosionSound } from '@/lib/sounds';
@@ -45,31 +44,12 @@ const CATEGORY_OFFSETS: Record<Category, number> = {
   '케익': 6000,
 };
 
-const BAKERY_GROUPS: { label: string; match: (name: string) => boolean }[] = [
-  { label: '크로칸슈', match: (n) => n.includes('크로칸슈') },
-  { label: '쿠키슈',   match: (n) => n.includes('쿠키슈') },
-  { label: '크루아상', match: (n) => n.includes('크루아상') },
-  { label: '소금빵',   match: (n) => ['소금빵', '소금식빵', '팥식빵', '말차 식빵', '모찌 식빵'].some(k => n === k || n.includes(k)) },
-  { label: '청크',     match: (n) => n.includes('청크') },
-  { label: '도넛',     match: (n) => n.includes('도넛') },
-  { label: '핫도그',   match: (n) => n.includes('핫도그') },
-  { label: '깨찰빵',   match: (n) => n.includes('깨찰빵') },
-  { label: '베이글',   match: (n) => n.includes('베이글') },
-];
-
-function getShortName(name: string, groupLabel: string): string {
-  const stripped = name.replace(groupLabel, '').trim();
-  return stripped.length > 0 ? stripped : name;
-}
-
 export default function Home() {
   const { theme } = useTheme();
   const [items, setItems] = useState<Item[]>([]);
   const [activeCategory, setActiveCategory] = useState<Category>('파우더');
   const [user, setUser] = useState<CafeUser | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
-  const [showChangePw, setShowChangePw] = useState(false);
   const [loading, setLoading] = useState(true);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
@@ -80,7 +60,7 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showDrawer, setShowDrawer] = useState(false);
+  const pendingActionRef = useRef<string | null>(null);
   const resetSnapshotRef = useRef<{ id: string; stock: number }[]>([]);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [explosionPhase, setExplosionPhase] = useState<'idle' | 'exploding' | 'stress' | 'rebuilding'>('idle');
@@ -143,6 +123,27 @@ export default function Home() {
     setReorderItems([...categoryItems]);
     setReorderMode(true);
   };
+
+  // 메뉴 탭에서 넘어온 액션(?action=...) — URL은 즉시 정리하고, 품목 로드 후 1회 실행
+  useEffect(() => {
+    const action = new URLSearchParams(window.location.search).get('action');
+    if (action) {
+      pendingActionRef.current = action;
+      window.history.replaceState(null, '', '/');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loading || !pendingActionRef.current) return;
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    if (action === 'add') setShowAddItem(true);
+    else if (action === 'minEdit') setMinEditMode(true);
+    else if (action === 'delete') setDeleteMode(true);
+    else if (action === 'reorder') handleReorderStart();
+    else if (action === 'reset') setShowResetConfirm(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const handleMinQtyChange = async (id: string, minQty: string) => {
     setItems(prev => prev.map(i => i.id === id ? { ...i, min_qty: minQty } : i));
@@ -568,23 +569,15 @@ export default function Home() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-        <div className="relative group">
+        {user && (
           <button
-            onClick={() => setShowDrawer(true)}
-            className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 active:bg-pink-100 transition-colors"
-            aria-label="메뉴 열기"
+            onClick={() => setShowAddItem(true)}
+            className="w-11 h-11 flex items-center justify-center rounded-xl bg-pink-500 text-white shadow-sm hover:bg-pink-600 active:scale-95 transition-all"
+            aria-label="품목 추가"
           >
-            <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
-            <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
-            <span className="block w-5 h-0.5 bg-pink-400 rounded-full" />
+            <Plus className="w-5 h-5" />
           </button>
-          <div className="absolute right-0 top-full mt-2 whitespace-nowrap bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-            로그 · 다크모드가 여기로 이동했어요
-            <div className="absolute -top-1 right-3.5 w-2 h-2 bg-gray-800 rotate-45" />
-          </div>
-        </div>
-        </div>
+        )}
       </div>
 
       {/* 검색 */}
@@ -613,73 +606,89 @@ export default function Home() {
         )}
       </div>
 
+      {/* 부족·주의 요약 스트립 — 칩 탭 시 해당 행으로 스크롤·하이라이트 */}
+      <div data-explodable>
+        <LowStockBanner items={items} loading={loading} onSelect={handleSearchSelect} />
+      </div>
+
       {/* 카테고리 탭 */}
       <div data-explodable><CategoryTabs active={activeCategory} onChange={setActiveCategory} /></div>
+
+      {/* 활성 모드 표시 + 종료 (드로어 제거로 여기서 끔) */}
+      {(minEditMode || deleteMode) && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {minEditMode && (
+            <button
+              onClick={() => setMinEditMode(false)}
+              className="h-11 px-4 rounded-full bg-pink-100 text-pink-700 text-xs font-semibold hover:bg-pink-200 transition-colors"
+            >
+              최소수량 수정 중 · 완료
+            </button>
+          )}
+          {deleteMode && (
+            <button
+              onClick={() => setDeleteMode(false)}
+              className="h-11 px-4 rounded-full bg-red-100 text-red-600 text-xs font-semibold hover:bg-red-200 transition-colors"
+            >
+              삭제 모드 켜짐 · 끄기
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 재고 테이블 */}
       <div data-explodable className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden mb-8">
         {loading ? (
           <div className="py-16 text-center text-pink-300 text-sm">불러오는 중...</div>
         ) : (
-          <div className="overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <table className="w-full min-w-[500px]">
-            <thead className="bg-pink-50/70 border-b border-pink-100">
-              <tr>
-                {reorderMode && <th className="w-8" />}
-                <th className="px-4 py-3 text-left text-xs font-semibold text-pink-500 uppercase tracking-wide">품목</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">최소</th>
-                <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">재고</th>
-                <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">팬트리</th>
-                <th className="px-2 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide">사무실</th>
-                {showExpiry && (
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-pink-500 uppercase tracking-wide whitespace-nowrap">유통기한</th>
-                )}
-                {user && !reorderMode && deleteMode && <th className="px-4 py-3" />}
-              </tr>
-            </thead>
+            {/* 리스트 헤더 — 행과 동일한 폭 배열 */}
+            <div className="flex items-center gap-1 px-3 py-2 bg-pink-50/70 border-b border-pink-100 text-[11px] font-bold text-pink-500 tracking-wide">
+              {reorderMode && <span className="w-7 shrink-0" />}
+              <span className="flex-1 min-w-0 pl-1">품목</span>
+              <span className="w-[132px] shrink-0 text-center">매장</span>
+              <span className="w-11 shrink-0 text-center">팬트리</span>
+              <span className="w-11 shrink-0 text-center">사무실</span>
+              {user && !reorderMode && deleteMode && <span className="w-12 shrink-0" />}
+            </div>
             <SortableContext items={sortedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
-            <tbody className="divide-y divide-pink-50">
-              {sortedItems.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-pink-200 text-sm">품목이 없습니다</td>
-                </tr>
-              ) : reorderMode ? (
-                sortedItems.map(item => (
-                  <SortableItemRow
-                    key={item.id}
-                    item={item}
-                    user={user}
-                    showExpiry={showExpiry}
-                    onStockChange={handleStockChange}
-                    onProductNameChange={handleProductNameChange}
-                    onExpiryChange={handleExpiryChange}
-                    onDelete={handleDelete}
-                  />
-                ))
-              ) : (
-                sortedItems.map(item => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    user={user}
-                    showExpiry={showExpiry}
-                    highlighted={highlightedId === item.id}
-                    minEditMode={minEditMode}
-                    deleteMode={deleteMode}
-                    onStockChange={handleStockChange}
-                    onProductNameChange={handleProductNameChange}
-                    onExpiryChange={handleExpiryChange}
-                    onMinQtyChange={handleMinQtyChange}
-                    onDelete={handleDelete}
-                  />
-                ))
-              )}
-            </tbody>
+              <div className="divide-y divide-pink-50">
+                {sortedItems.length === 0 ? (
+                  <div className="py-12 text-center text-pink-200 text-sm">품목이 없습니다</div>
+                ) : reorderMode ? (
+                  sortedItems.map(item => (
+                    <SortableItemRow
+                      key={item.id}
+                      item={item}
+                      user={user}
+                      showExpiry={showExpiry}
+                      onStockChange={handleStockChange}
+                      onProductNameChange={handleProductNameChange}
+                      onExpiryChange={handleExpiryChange}
+                      onDelete={handleDelete}
+                    />
+                  ))
+                ) : (
+                  sortedItems.map(item => (
+                    <ItemRow
+                      key={item.id}
+                      item={item}
+                      user={user}
+                      showExpiry={showExpiry}
+                      highlighted={highlightedId === item.id}
+                      minEditMode={minEditMode}
+                      deleteMode={deleteMode}
+                      onStockChange={handleStockChange}
+                      onProductNameChange={handleProductNameChange}
+                      onExpiryChange={handleExpiryChange}
+                      onMinQtyChange={handleMinQtyChange}
+                      onDelete={handleDelete}
+                    />
+                  ))
+                )}
+              </div>
             </SortableContext>
-          </table>
           </DndContext>
-          </div>
         )}
         {reorderMode && (
           <div className="p-4 border-t border-pink-50">
@@ -716,33 +725,9 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* 드로어 */}
-      <MenuDrawer
-        open={showDrawer}
-        onClose={() => setShowDrawer(false)}
-        user={user}
-        activeCategory={activeCategory}
-        minEditMode={minEditMode}
-        reorderMode={reorderMode}
-        deleteMode={deleteMode}
-        onAddItem={() => setShowAddItem(true)}
-        onToggleMinEdit={() => setMinEditMode(v => !v)}
-        onToggleDeleteMode={() => setDeleteMode(v => !v)}
-        onReorderStart={handleReorderStart}
-        onReorderSave={handleReorderSave}
-        onResetConfirm={() => setShowResetConfirm(true)}
-        onChangePw={() => setShowChangePw(true)}
-        onLogout={() => { clearSession(); setUser(null); }}
-        onLogin={() => setShowLogin(true)}
-      />
-
       {/* 모달들 */}
       <AddItemModal open={showAddItem} initialCategory={activeCategory}
         onClose={() => setShowAddItem(false)} onAdd={handleAdd} />
-      <LoginModal open={showLogin}
-        onSuccess={u => { saveSession(u); setUser(u); setShowLogin(false); }}
-        onClose={() => setShowLogin(false)} />
-      <ChangePasswordModal open={showChangePw} onClose={() => setShowChangePw(false)} />
     </main>
     </>
   );

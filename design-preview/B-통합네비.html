@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시안 B — 통합 내비 · 카페 재고관리</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: {
+      ig: {50:'#fdf2f7',100:'#fce7f0',200:'#f9cfe1',300:'#f5a8c9',400:'#ee6fa4',500:'#e1306c',600:'#c13584',700:'#9d2c6e',800:'#7a2456'},
+    },
+    fontFamily: {
+      jua: ['Jua','sans-serif'],
+      sans: ['"Pretendard Variable"','Pretendard','-apple-system','sans-serif'],
+    },
+  }}
+}
+</script>
+<style>
+  * { word-break: keep-all; }
+  body { overflow-wrap: break-word; }
+  .no-sb::-webkit-scrollbar { display:none } .no-sb { scrollbar-width:none }
+  .tnum { font-variant-numeric: tabular-nums }
+  .ig-grad { background: linear-gradient(135deg,#e1306c 0%,#c13584 100%) }
+  .ig-text-grad {
+    background: linear-gradient(135deg,#e1306c 0%,#c13584 55%,#833ab4 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .board {
+    background-color:#170a10;
+    background-image:
+      radial-gradient(900px 500px at 8% -5%, rgba(225,48,108,.16), transparent 60%),
+      radial-gradient(800px 600px at 100% 110%, rgba(131,58,180,.14), transparent 60%),
+      radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: auto, auto, 26px 26px;
+  }
+  /* 재고 행 그리드 — 품목 | 매장(스테퍼) | 팬트리 | 사무실 */
+  .row-grid { display:grid; grid-template-columns: minmax(0,1fr) 134px 44px 48px; align-items:center }
+  .stepbtn {
+    width:44px; height:44px; border-radius:9999px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    background:#fce7f0; color:#c13584;
+  }
+  .stepbtn.off { opacity:.3 }
+  .stepbtn.pressed {
+    background:linear-gradient(135deg,#e1306c,#c13584); color:#fff;
+    transform:scale(.9); box-shadow:0 6px 16px rgba(225,48,108,.45);
+  }
+  /* 토글 스위치 */
+  .sw { width:44px; height:26px; border-radius:999px; background:#e5e7eb; position:relative; flex:none }
+  .sw::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:999px; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25) }
+  .sw.on { background:linear-gradient(135deg,#e1306c,#c13584) }
+  .sw.on::after { left:auto; right:3px }
+</style>
+</head>
+<body class="board font-sans text-gray-900 min-h-screen">
+
+<!-- ==================== 아이콘 스프라이트 (lucide 스타일) ==================== -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-package" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/></g></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></g></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></g></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></g></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></g></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></g></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></g></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></g></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></g></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></g></symbol>
+  <symbol id="i-updown" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></g></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></g></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></g></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></g></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></g></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0 0 20 1.8 1.8 0 0 0 1.3-3.1 1.8 1.8 0 0 1 1.3-3H17a5 5 0 0 0 5-5c0-4.9-4.5-8.9-10-8.9Z"/><circle cx="13.5" cy="6.5" r=".8" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".8" fill="currentColor"/></g></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></g></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></g></symbol>
+</svg>
+
+<!-- ==================== 보드 헤더 : 시안 이름 + 3줄 요약 ==================== -->
+<header class="px-8 pt-10 pb-4">
+  <p class="text-ig-300/60 text-[11px] tracking-[0.3em] font-bold">CAFE INVENTORY · DESIGN PREVIEW</p>
+  <div class="flex flex-wrap items-end gap-x-5 gap-y-1 mt-2">
+    <h1 class="font-jua text-[40px] leading-none text-white">시안 B <span class="ig-text-grad">통합 내비</span></h1>
+    <p class="text-white/45 text-[13px] pb-1">디저트39 신사역점 · 모바일 390px 프레임 6장 + 데스크톱 1280px 프리뷰</p>
+  </div>
+  <div class="mt-5 rounded-2xl border border-ig-500/30 bg-white/[0.04] px-6 py-5 max-w-3xl">
+    <p class="text-[11px] font-bold tracking-[0.2em] text-ig-300 mb-3">핵심 변경 3줄</p>
+    <ol class="space-y-2.5 text-[13.5px] leading-relaxed text-white/85">
+      <li class="flex gap-3"><span class="ig-grad text-white w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">1</span>메인·대시보드·로그 3개 페이지를 하단 탭바 4개(재고 / 현황 / 기록 / 메뉴)로 통합 — 페이지 이동 없이 엄지 반경 안에서 전환, 현황 탭에 부족 수 배지 상시 노출</li>
+      <li class="flex gap-3"><span class="ig-grad text-white w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">2</span>재고 탭 상단에 부족·주의 요약 스트립(가로 스크롤 칩) — 칩을 탭하면 해당 품목 행으로 스크롤·하이라이트, 스테퍼는 44px로 확대·실행취소 토스트는 탭바 위 고정 슬롯(레이아웃 밀림 없음)</li>
+      <li class="flex gap-3"><span class="ig-grad text-white w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">3</span>드로어에 숨어 있던 품목추가·초기화 등 관리 액션을 메뉴 탭·헤더 버튼·바텀시트로 승격, 데스크톱(1024px+)은 좌측 네비 + 우측 콘텐츠 분할로 전 기능 상시 노출</li>
+    </ol>
+  </div>
+</header>
+
+<!-- ==================== 프레임 레일 ==================== -->
+<main class="flex items-start gap-12 overflow-x-auto no-sb px-8 pt-6 pb-16">
+
+<!-- ============================================================
+     FRAME 01 · 재고 탭 — 기본
+     ============================================================ -->
+<section class="shrink-0 w-[390px]">
+  <p class="text-white/85 text-sm font-bold mb-1">01 · 재고 탭 — 기본</p>
+  <p class="text-white/40 text-[12.5px] leading-relaxed mb-4">요약 스트립 + 카테고리 + 리스트. 부족(빨강)·주의(노랑) 행 상태, 최소값은 "3"·"절반"·"3개" 문자열 그대로.</p>
+
+  <div class="relative w-[390px] h-[844px] rounded-[46px] overflow-hidden bg-[#fdf7f9] ring-[9px] ring-[#2b1620] shadow-[0_30px_80px_-20px_rgba(225,48,108,0.3)]">
+    <!-- 상태바 -->
+    <div class="h-12 px-8 flex items-center justify-between text-[13px] font-semibold text-gray-800">
+      <span class="tnum">9:41</span>
+      <span class="flex items-center gap-1.5">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.3" y="5" width="3" height="6" rx="0.8"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="12.9" y="0" width="3" height="11" rx="0.8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7.2a6 6 0 0 1 8 0"/><path d="M6.5 9.8a2.6 2.6 0 0 1 3 0"/></svg>
+        <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x="0.5" y="0.5" width="19" height="11" rx="3" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="14" height="8" rx="1.6" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity="0.4"/></svg>
+      </span>
+    </div>
+
+    <!-- 헤더 -->
+    <div class="px-5 pt-1 pb-3 flex items-start justify-between">
+      <div>
+        <h2 class="font-jua text-[27px] leading-none ig-text-grad">재고관리</h2>
+        <p class="text-[11px] text-ig-300 mt-1.5 font-medium">디저트39 신사역점 · 품목 128</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="w-11 h-11 rounded-2xl border border-ig-200 bg-white text-ig-400 flex items-center justify-center" aria-label="품목 검색"><svg class="w-5 h-5"><use href="#i-search"/></svg></button>
+        <button class="w-11 h-11 rounded-2xl ig-grad text-white flex items-center justify-center shadow-lg shadow-ig-500/30" aria-label="품목 추가"><svg class="w-5 h-5"><use href="#i-plus"/></svg></button>
+      </div>
+    </div>
+
+    <!-- 부족·주의 요약 스트립 -->
+    <div class="relative">
+      <div class="flex gap-2 overflow-x-auto no-sb pl-5 pr-10">
+        <span class="h-11 px-4 rounded-full bg-red-500 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0"><svg class="w-4 h-4"><use href="#i-alert"/></svg>부족 4</span>
+        <button class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">딸기파우더</span><span class="font-bold text-red-600 tnum">0</span></button>
+        <button class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">밀크베이스</span><span class="font-bold text-red-600 tnum">1</span></button>
+        <button class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">바닐라시럽</span><span class="font-bold text-red-600 tnum">0</span></button>
+        <span class="h-11 px-4 rounded-full bg-amber-400 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0">주의 6</span>
+        <button class="h-11 px-3.5 rounded-full bg-white border border-amber-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-amber-400"></span><span class="font-medium text-gray-700">초코파우더</span><span class="font-bold text-amber-500 tnum">2</span></button>
+      </div>
+      <div class="absolute right-0 inset-y-0 w-10 bg-gradient-to-l from-[#fdf7f9] pointer-events-none"></div>
+    </div>
+
+    <!-- 카테고리 탭 -->
+    <div class="relative mt-3">
+      <div class="flex gap-2 overflow-x-auto no-sb pl-5 pr-10">
+        <button class="h-11 px-5 rounded-full ig-grad text-white text-[14px] font-bold shrink-0 shadow-md shadow-ig-500/25">파우더</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">시럽</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">이외품목</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">베이커리</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">오믈렛 및 마카롱</button>
+      </div>
+      <div class="absolute right-0 inset-y-0 w-10 bg-gradient-to-l from-[#fdf7f9] pointer-events-none"></div>
+    </div>
+
+    <!-- 재고 리스트 -->
+    <div class="mx-4 mt-3 rounded-2xl bg-white border border-ig-100 shadow-[0_4px_24px_rgba(225,48,108,0.08)] overflow-hidden">
+      <div class="row-grid px-3 py-2 bg-ig-50 text-[10.5px] font-bold text-ig-500 tracking-wide">
+        <span class="pl-2">품목</span><span class="text-center">매장</span><span class="text-center">팬트리</span><span class="text-center">사무실</span>
+      </div>
+
+      <!-- danger -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50 bg-red-50/70">
+        <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-red-400"></span>
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">밀크베이스</p><p class="text-[11px] text-gray-400 mt-0.5">최소 3 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-red-600">1</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">2</button>
+      </div>
+
+      <!-- danger -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50 bg-red-50/70">
+        <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-red-400"></span>
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">딸기파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn off" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-red-600">0</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">1</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+      </div>
+
+      <!-- warning -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50 bg-amber-50/70">
+        <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-amber-400"></span>
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">초코파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-amber-500">2</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">3</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">1</button>
+      </div>
+
+      <!-- ok -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">바닐라파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">4</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">2</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">3</button>
+      </div>
+
+      <!-- ok / 문자열 최소값 "절반" -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">말차파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 절반 · 개</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">5</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">2</button>
+      </div>
+
+      <!-- ok / 문자열 최소값 "3개" -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">로얄밀크티</p><p class="text-[11px] text-gray-400 mt-0.5">최소 3개 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">6</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">1</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">4</button>
+      </div>
+
+      <!-- ok -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">흑임자파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">3</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">2</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+      </div>
+
+      <!-- ok -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">얼그레이파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">4</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">1</button>
+      </div>
+    </div>
+
+    <!-- 하단 탭바 -->
+    <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-ig-100 px-2 pt-1.5 pb-6">
+      <div class="grid grid-cols-4">
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-ig-500">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full bg-ig-50"><svg class="w-[22px] h-[22px]"><use href="#i-package"/></svg></span>
+          <span class="text-[10.5px] font-bold">재고</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="relative w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-chart"/></svg><span class="absolute -top-1 right-1.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center tnum">4</span></span>
+          <span class="text-[10.5px] font-semibold">현황</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-history"/></svg></span>
+          <span class="text-[10.5px] font-semibold">기록</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-menu"/></svg></span>
+          <span class="text-[10.5px] font-semibold">메뉴</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<!-- ============================================================
+     FRAME 02 · 재고 탭 — 인터랙션 상태
+     ============================================================ -->
+<section class="shrink-0 w-[390px]">
+  <p class="text-white/85 text-sm font-bold mb-1">02 · 재고 탭 — 인터랙션 상태</p>
+  <p class="text-white/40 text-[12.5px] leading-relaxed mb-4">요약 칩 탭 → 해당 행 스크롤·하이라이트. 스테퍼 + 누름 상태와 실행취소 토스트(탭바 위 고정 슬롯 — 콘텐츠를 밀지 않음).</p>
+
+  <div class="relative w-[390px] h-[844px] rounded-[46px] overflow-hidden bg-[#fdf7f9] ring-[9px] ring-[#2b1620] shadow-[0_30px_80px_-20px_rgba(225,48,108,0.3)]">
+    <div class="h-12 px-8 flex items-center justify-between text-[13px] font-semibold text-gray-800">
+      <span class="tnum">9:41</span>
+      <span class="flex items-center gap-1.5">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.3" y="5" width="3" height="6" rx="0.8"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="12.9" y="0" width="3" height="11" rx="0.8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7.2a6 6 0 0 1 8 0"/><path d="M6.5 9.8a2.6 2.6 0 0 1 3 0"/></svg>
+        <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x="0.5" y="0.5" width="19" height="11" rx="3" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="14" height="8" rx="1.6" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity="0.4"/></svg>
+      </span>
+    </div>
+
+    <div class="px-5 pt-1 pb-3 flex items-start justify-between">
+      <div>
+        <h2 class="font-jua text-[27px] leading-none ig-text-grad">재고관리</h2>
+        <p class="text-[11px] text-ig-300 mt-1.5 font-medium">디저트39 신사역점 · 품목 128</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="w-11 h-11 rounded-2xl border border-ig-200 bg-white text-ig-400 flex items-center justify-center" aria-label="품목 검색"><svg class="w-5 h-5"><use href="#i-search"/></svg></button>
+        <button class="w-11 h-11 rounded-2xl ig-grad text-white flex items-center justify-center shadow-lg shadow-ig-500/30" aria-label="품목 추가"><svg class="w-5 h-5"><use href="#i-plus"/></svg></button>
+      </div>
+    </div>
+
+    <!-- 요약 스트립 — "딸기파우더" 칩 활성(탭됨) -->
+    <div class="relative">
+      <div class="flex gap-2 overflow-x-auto no-sb pl-5 pr-10">
+        <span class="h-11 px-4 rounded-full bg-red-500 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0"><svg class="w-4 h-4"><use href="#i-alert"/></svg>부족 4</span>
+        <button class="h-11 px-3.5 rounded-full bg-red-500 text-white ring-2 ring-red-300 ring-offset-2 ring-offset-[#fdf7f9] flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-white"></span><span class="font-bold">딸기파우더</span><span class="font-bold tnum">0</span></button>
+        <button class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">밀크베이스</span><span class="font-bold text-red-600 tnum">1</span></button>
+        <button class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">바닐라시럽</span><span class="font-bold text-red-600 tnum">0</span></button>
+        <span class="h-11 px-4 rounded-full bg-amber-400 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0">주의 6</span>
+      </div>
+      <div class="absolute right-0 inset-y-0 w-10 bg-gradient-to-l from-[#fdf7f9] pointer-events-none"></div>
+    </div>
+
+    <div class="relative mt-3">
+      <div class="flex gap-2 overflow-x-auto no-sb pl-5 pr-10">
+        <button class="h-11 px-5 rounded-full ig-grad text-white text-[14px] font-bold shrink-0 shadow-md shadow-ig-500/25">파우더</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">시럽</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">이외품목</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">베이커리</button>
+        <button class="h-11 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold shrink-0">오믈렛 및 마카롱</button>
+      </div>
+      <div class="absolute right-0 inset-y-0 w-10 bg-gradient-to-l from-[#fdf7f9] pointer-events-none"></div>
+    </div>
+
+    <div class="mx-4 mt-3 rounded-2xl bg-white border border-ig-100 shadow-[0_4px_24px_rgba(225,48,108,0.08)] overflow-hidden">
+      <div class="row-grid px-3 py-2 bg-ig-50 text-[10.5px] font-bold text-ig-500 tracking-wide">
+        <span class="pl-2">품목</span><span class="text-center">매장</span><span class="text-center">팬트리</span><span class="text-center">사무실</span>
+      </div>
+
+      <!-- 칩 탭 결과: 하이라이트 행 -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50 bg-red-50/70 ring-2 ring-inset ring-ig-400">
+        <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-red-400"></span>
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">딸기파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn off" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-red-600">0</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">1</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+      </div>
+
+      <!-- 스테퍼 + 누른 상태 -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">바닐라파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">5</span>
+          <button class="stepbtn pressed" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">2</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">3</button>
+      </div>
+
+      <!-- 직접 입력 편집 중 상태 -->
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50 bg-amber-50/70">
+        <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-amber-400"></span>
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">초코파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 h-9 flex items-center justify-center rounded-lg border-2 border-ig-400 ring-2 ring-ig-200 text-[15px] font-bold tnum text-gray-800 bg-white">2<span class="w-px h-4 bg-ig-500 ml-0.5 animate-pulse"></span></span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">3</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">1</button>
+      </div>
+
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">말차파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 절반 · 개</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">5</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">2</button>
+      </div>
+
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">로얄밀크티</p><p class="text-[11px] text-gray-400 mt-0.5">최소 3개 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">6</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">1</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">4</button>
+      </div>
+
+      <div class="row-grid relative px-3 py-2 border-t border-ig-50">
+        <div class="pl-2 min-w-0"><p class="text-[15px] font-semibold text-gray-800 truncate">흑임자파우더</p><p class="text-[11px] text-gray-400 mt-0.5">최소 2 · 봉</p></div>
+        <div class="flex items-center justify-center gap-0.5">
+          <button class="stepbtn" aria-label="감소"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+          <span class="w-9 text-center text-[16px] font-bold tnum text-emerald-600">3</span>
+          <button class="stepbtn" aria-label="증가"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+        </div>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">2</button>
+        <button class="h-11 text-[14px] font-medium text-gray-500 tnum">0</button>
+      </div>
+    </div>
+
+    <!-- 실행취소 토스트 — 탭바 위 고정 슬롯 -->
+    <div class="absolute left-4 right-4 bottom-[104px] h-12 rounded-2xl bg-gray-900/95 text-white px-4 flex items-center justify-between shadow-xl">
+      <span class="text-[13px]">바닐라파우더 매장 <span class="tnum">4 → 5</span></span>
+      <button class="h-full px-3 -mr-2 text-[13px] font-bold text-ig-300">실행취소</button>
+    </div>
+
+    <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-ig-100 px-2 pt-1.5 pb-6">
+      <div class="grid grid-cols-4">
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-ig-500">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full bg-ig-50"><svg class="w-[22px] h-[22px]"><use href="#i-package"/></svg></span>
+          <span class="text-[10.5px] font-bold">재고</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="relative w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-chart"/></svg><span class="absolute -top-1 right-1.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center tnum">4</span></span>
+          <span class="text-[10.5px] font-semibold">현황</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-history"/></svg></span>
+          <span class="text-[10.5px] font-semibold">기록</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-menu"/></svg></span>
+          <span class="text-[10.5px] font-semibold">메뉴</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<!-- ============================================================
+     FRAME 03 · 현황 탭 (대시보드 통합)
+     ============================================================ -->
+<section class="shrink-0 w-[390px]">
+  <p class="text-white/85 text-sm font-bold mb-1">03 · 현황 탭 — 대시보드 통합</p>
+  <p class="text-white/40 text-[12.5px] leading-relaxed mb-4">별도 /dashboard 페이지를 탭으로 흡수. 상태 요약 + 유통기한 임박 + 카테고리별 부족. 행 탭 시 재고 탭 해당 품목으로 이동.</p>
+
+  <div class="relative w-[390px] h-[844px] rounded-[46px] overflow-hidden bg-[#fdf7f9] ring-[9px] ring-[#2b1620] shadow-[0_30px_80px_-20px_rgba(225,48,108,0.3)]">
+    <div class="h-12 px-8 flex items-center justify-between text-[13px] font-semibold text-gray-800">
+      <span class="tnum">9:41</span>
+      <span class="flex items-center gap-1.5">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.3" y="5" width="3" height="6" rx="0.8"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="12.9" y="0" width="3" height="11" rx="0.8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7.2a6 6 0 0 1 8 0"/><path d="M6.5 9.8a2.6 2.6 0 0 1 3 0"/></svg>
+        <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x="0.5" y="0.5" width="19" height="11" rx="3" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="14" height="8" rx="1.6" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity="0.4"/></svg>
+      </span>
+    </div>
+
+    <div class="px-5 pt-1 pb-4 flex items-end justify-between">
+      <h2 class="font-jua text-[27px] leading-none ig-text-grad">현황</h2>
+      <p class="text-[11px] text-gray-400">방금 전 업데이트</p>
+    </div>
+
+    <!-- 상태 타일 -->
+    <div class="px-4 grid grid-cols-4 gap-2">
+      <div class="bg-white border border-ig-100 rounded-2xl py-3 text-center shadow-[0_4px_16px_rgba(225,48,108,0.06)]">
+        <p class="text-[20px] font-bold text-ig-700 tnum">128</p><p class="text-[11px] text-gray-400 mt-0.5">전체</p>
+      </div>
+      <div class="bg-red-50 border border-red-200 rounded-2xl py-3 text-center">
+        <p class="text-[20px] font-bold text-red-600 tnum">4</p><p class="text-[11px] text-gray-400 mt-0.5">부족</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl py-3 text-center">
+        <p class="text-[20px] font-bold text-amber-500 tnum">6</p><p class="text-[11px] text-gray-400 mt-0.5">주의</p>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl py-3 text-center">
+        <p class="text-[20px] font-bold text-emerald-600 tnum">118</p><p class="text-[11px] text-gray-400 mt-0.5">정상</p>
+      </div>
+    </div>
+
+    <!-- 유통기한 임박 -->
+    <div class="px-4 mt-4">
+      <p class="text-[11px] font-bold tracking-wider text-ig-400 mb-2 px-1">유통기한 임박</p>
+      <div class="bg-white rounded-2xl border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] divide-y divide-ig-50 overflow-hidden">
+        <button class="w-full min-h-11 flex items-center justify-between px-4 py-2.5 text-left">
+          <span class="flex items-center gap-2 min-w-0"><svg class="w-4 h-4 text-red-500 shrink-0"><use href="#i-clock"/></svg><span class="text-[14px] font-medium text-gray-800 truncate">도쿄롤 플레인</span><span class="text-[11px] text-gray-400 shrink-0">도쿄롤</span></span>
+          <span class="flex items-center gap-2 shrink-0"><span class="text-[11px] text-gray-400 tnum">07.24</span><span class="text-[11px] font-bold text-white bg-red-500 px-2 py-0.5 rounded-full">D-1</span></span>
+        </button>
+        <button class="w-full min-h-11 flex items-center justify-between px-4 py-2.5 text-left">
+          <span class="flex items-center gap-2 min-w-0"><svg class="w-4 h-4 text-amber-500 shrink-0"><use href="#i-clock"/></svg><span class="text-[14px] font-medium text-gray-800 truncate">생크림 케익</span><span class="text-[11px] text-gray-400 shrink-0">케익</span></span>
+          <span class="flex items-center gap-2 shrink-0"><span class="text-[11px] text-gray-400 tnum">07.26</span><span class="text-[11px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">D-3</span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 카테고리별 부족 현황 -->
+    <div class="px-4 mt-4">
+      <p class="text-[11px] font-bold tracking-wider text-ig-400 mb-2 px-1">카테고리별 부족 현황</p>
+
+      <div class="bg-white rounded-2xl border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] overflow-hidden mb-3">
+        <div class="flex items-center justify-between px-4 py-2.5 bg-ig-50 border-b border-ig-100">
+          <span class="font-jua text-[14px] text-ig-700">파우더</span>
+          <span class="text-[11px] text-gray-400">부족 2 · 주의 1</span>
+        </div>
+        <div class="divide-y divide-ig-50">
+          <button class="w-full min-h-11 flex items-center justify-between px-4 py-2.5 bg-red-50/50 text-left">
+            <span class="text-[14px] font-medium text-gray-800">딸기파우더</span>
+            <span class="flex items-center gap-2"><span class="text-[11px] text-gray-400">최소 2</span><span class="text-[11px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full tnum">재고 0</span><svg class="w-4 h-4 text-gray-300"><use href="#i-chev"/></svg></span>
+          </button>
+          <button class="w-full min-h-11 flex items-center justify-between px-4 py-2.5 bg-red-50/50 text-left">
+            <span class="text-[14px] font-medium text-gray-800">밀크베이스</span>
+            <span class="flex items-center gap-2"><span class="text-[11px] text-gray-400">최소 3</span><span class="text-[11px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full tnum">재고 1</span><svg class="w-4 h-4 text-gray-300"><use href="#i-chev"/></svg></span>
+          </button>
+          <button class="w-full min-h-11 flex items-center justify-between px-4 py-2.5 bg-amber-50/50 text-left">
+            <span class="text-[14px] font-medium text-gray-800">초코파우더</span>
+            <span class="flex items-center gap-2"><span class="text-[11px] text-gray-400">최소 2</span><span class="text-[11px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full tnum">2 / 2</span><svg class="w-4 h-4 text-gray-300"><use href="#i-chev"/></svg></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] overflow-hidden mb-3">
+        <div class="flex items-center justify-between px-4 py-2.5 bg-ig-50 border-b border-ig-100">
+          <span class="font-jua text-[14px] text-ig-700">시럽</span>
+          <span class="text-[11px] text-gray-400">부족 1</span>
+        </div>
+        <button class="w-full min-h-11 flex items-center justify-between px-4 py-2.5 bg-red-50/50 text-left">
+          <span class="text-[14px] font-medium text-gray-800">바닐라시럽</span>
+          <span class="flex items-center gap-2"><span class="text-[11px] text-gray-400">최소 2</span><span class="text-[11px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full tnum">재고 0</span><svg class="w-4 h-4 text-gray-300"><use href="#i-chev"/></svg></span>
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-2.5 bg-ig-50">
+          <span class="font-jua text-[14px] text-ig-700">베이커리</span>
+          <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">정상</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-ig-100 px-2 pt-1.5 pb-6">
+      <div class="grid grid-cols-4">
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-package"/></svg></span>
+          <span class="text-[10.5px] font-semibold">재고</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-ig-500">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full bg-ig-50"><svg class="w-[22px] h-[22px]"><use href="#i-chart"/></svg></span>
+          <span class="text-[10.5px] font-bold">현황</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-history"/></svg></span>
+          <span class="text-[10.5px] font-semibold">기록</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-menu"/></svg></span>
+          <span class="text-[10.5px] font-semibold">메뉴</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<!-- ============================================================
+     FRAME 04 · 기록 탭 (로그 통합)
+     ============================================================ -->
+<section class="shrink-0 w-[390px]">
+  <p class="text-white/85 text-sm font-bold mb-1">04 · 기록 탭 — 변경 로그 통합</p>
+  <p class="text-white/40 text-[12.5px] leading-relaxed mb-4">별도 /logs 페이지를 탭으로 흡수. 기간·위치 필터 칩 + 일자별 그룹. 초기화 이벤트는 붉은 행으로 구분.</p>
+
+  <div class="relative w-[390px] h-[844px] rounded-[46px] overflow-hidden bg-[#fdf7f9] ring-[9px] ring-[#2b1620] shadow-[0_30px_80px_-20px_rgba(225,48,108,0.3)]">
+    <div class="h-12 px-8 flex items-center justify-between text-[13px] font-semibold text-gray-800">
+      <span class="tnum">9:41</span>
+      <span class="flex items-center gap-1.5">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.3" y="5" width="3" height="6" rx="0.8"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="12.9" y="0" width="3" height="11" rx="0.8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7.2a6 6 0 0 1 8 0"/><path d="M6.5 9.8a2.6 2.6 0 0 1 3 0"/></svg>
+        <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x="0.5" y="0.5" width="19" height="11" rx="3" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="14" height="8" rx="1.6" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity="0.4"/></svg>
+      </span>
+    </div>
+
+    <div class="px-5 pt-1 pb-4 flex items-end justify-between">
+      <h2 class="font-jua text-[27px] leading-none ig-text-grad">기록</h2>
+      <span class="text-[11px] text-gray-400 bg-ig-50 px-2.5 py-1 rounded-full tnum">84건</span>
+    </div>
+
+    <!-- 미니 통계 -->
+    <div class="px-4 grid grid-cols-3 gap-2">
+      <div class="bg-white border border-ig-100 rounded-2xl px-3 py-2.5 shadow-[0_4px_16px_rgba(225,48,108,0.06)]">
+        <p class="text-[11px] text-gray-400">오늘 변경</p><p class="text-[16px] font-bold text-gray-800 tnum mt-0.5">12건</p>
+      </div>
+      <div class="bg-white border border-ig-100 rounded-2xl px-3 py-2.5 shadow-[0_4px_16px_rgba(225,48,108,0.06)]">
+        <p class="text-[11px] text-gray-400">최다 변경</p><p class="text-[14px] font-bold text-ig-700 truncate mt-1">밀크베이스</p>
+      </div>
+      <div class="bg-white border border-ig-100 rounded-2xl px-3 py-2.5 shadow-[0_4px_16px_rgba(225,48,108,0.06)]">
+        <p class="text-[11px] text-gray-400">0 도달</p><p class="text-[16px] font-bold text-red-500 tnum mt-0.5">2건</p>
+      </div>
+    </div>
+
+    <!-- 필터 -->
+    <div class="px-4 mt-3 space-y-2">
+      <div class="relative">
+        <div class="flex gap-1.5 overflow-x-auto no-sb pr-8">
+          <button class="h-9 px-3.5 rounded-full ig-grad text-white text-[12px] font-bold shrink-0">7일</button>
+          <button class="h-9 px-3.5 rounded-full bg-white border border-gray-200 text-gray-500 text-[12px] font-medium shrink-0">오늘</button>
+          <button class="h-9 px-3.5 rounded-full bg-white border border-gray-200 text-gray-500 text-[12px] font-medium shrink-0">30일</button>
+          <button class="h-9 px-3.5 rounded-full bg-white border border-gray-200 text-gray-500 text-[12px] font-medium shrink-0">전체</button>
+          <span class="w-px h-5 bg-gray-200 self-center shrink-0"></span>
+          <button class="h-9 px-3.5 rounded-full bg-white border border-gray-200 text-gray-500 text-[12px] font-medium shrink-0">매장</button>
+          <button class="h-9 px-3.5 rounded-full bg-white border border-gray-200 text-gray-500 text-[12px] font-medium shrink-0">팬트리</button>
+          <button class="h-9 px-3.5 rounded-full bg-white border border-gray-200 text-gray-500 text-[12px] font-medium shrink-0">사무실</button>
+        </div>
+        <div class="absolute right-0 inset-y-0 w-8 bg-gradient-to-l from-[#fdf7f9] pointer-events-none"></div>
+      </div>
+    </div>
+
+    <!-- 오늘 그룹 -->
+    <div class="px-4 mt-3">
+      <div class="bg-white rounded-2xl border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] overflow-hidden">
+        <div class="px-4 py-2.5 bg-ig-50 border-b border-ig-100 flex items-center justify-between">
+          <span class="text-[13px] font-bold text-ig-700">7월 23일 (수)</span>
+          <span class="text-[11px] text-gray-400 tnum">12건</span>
+        </div>
+        <div class="divide-y divide-ig-50">
+          <div class="px-4 py-2.5 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5"><span class="text-[14px] font-medium text-gray-800 truncate">바닐라시럽</span><span class="text-[10.5px] font-medium text-ig-700 bg-ig-100 px-1.5 py-0.5 rounded-full shrink-0">매장</span></div>
+              <p class="text-[11px] text-gray-400 mt-0.5">매니저 A · 14:05</p>
+            </div>
+            <div class="text-right shrink-0"><p class="text-[15px] font-bold text-emerald-600 tnum">+2</p><p class="text-[11px] text-gray-400 tnum">2 → 4</p></div>
+          </div>
+          <div class="px-4 py-2.5 flex items-center justify-between gap-3 bg-orange-50/40">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5"><span class="text-[14px] font-medium text-gray-800 truncate">밀크베이스</span><span class="text-[10.5px] font-medium text-ig-700 bg-ig-100 px-1.5 py-0.5 rounded-full shrink-0">매장</span><span class="text-[10.5px] font-bold text-orange-500 shrink-0">0 도달</span></div>
+              <p class="text-[11px] text-gray-400 mt-0.5">매니저 B · 13:40</p>
+            </div>
+            <div class="text-right shrink-0"><p class="text-[15px] font-bold text-red-500 tnum">-1</p><p class="text-[11px] text-gray-400 tnum">1 → 0</p></div>
+          </div>
+          <div class="px-4 py-2.5 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5"><span class="text-[14px] font-medium text-gray-800 truncate">마카롱 바닐라</span><span class="text-[10.5px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">사무실</span></div>
+              <p class="text-[11px] text-gray-400 mt-0.5">오너 · 11:12</p>
+            </div>
+            <div class="text-right shrink-0"><p class="text-[15px] font-bold text-emerald-600 tnum">+6</p><p class="text-[11px] text-gray-400 tnum">0 → 6</p></div>
+          </div>
+          <div class="px-4 py-2.5 flex items-center justify-between gap-3 bg-red-50/50">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5"><span class="text-[11px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full shrink-0">전체 초기화</span><span class="text-[12px] text-gray-500 truncate">카운터 재고 21개 품목</span></div>
+              <p class="text-[11px] text-gray-400 mt-0.5">오너 · 09:00</p>
+            </div>
+            <svg class="w-4 h-4 text-red-300 shrink-0"><use href="#i-reset"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 어제 그룹 -->
+    <div class="px-4 mt-3">
+      <div class="bg-white rounded-2xl border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] overflow-hidden">
+        <div class="px-4 py-2.5 bg-ig-50 border-b border-ig-100 flex items-center justify-between">
+          <span class="text-[13px] font-bold text-ig-700">7월 22일 (화)</span>
+          <span class="text-[11px] text-gray-400 tnum">18건</span>
+        </div>
+        <div class="divide-y divide-ig-50">
+          <div class="px-4 py-2.5 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5"><span class="text-[14px] font-medium text-gray-800 truncate">도쿄롤 초코</span><span class="text-[10.5px] font-medium text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full shrink-0">팬트리</span></div>
+              <p class="text-[11px] text-gray-400 mt-0.5">매니저 A · 18:22</p>
+            </div>
+            <div class="text-right shrink-0"><p class="text-[15px] font-bold text-emerald-600 tnum">+3</p><p class="text-[11px] text-gray-400 tnum">1 → 4</p></div>
+          </div>
+          <div class="px-4 py-2.5 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5"><span class="text-[14px] font-medium text-gray-800 truncate">연유</span><span class="text-[10.5px] font-medium text-ig-700 bg-ig-100 px-1.5 py-0.5 rounded-full shrink-0">매장</span></div>
+              <p class="text-[11px] text-gray-400 mt-0.5">매니저 B · 16:03</p>
+            </div>
+            <div class="text-right shrink-0"><p class="text-[15px] font-bold text-red-500 tnum">-1</p><p class="text-[11px] text-gray-400 tnum">3 → 2</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-ig-100 px-2 pt-1.5 pb-6">
+      <div class="grid grid-cols-4">
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-package"/></svg></span>
+          <span class="text-[10.5px] font-semibold">재고</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="relative w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-chart"/></svg><span class="absolute -top-1 right-1.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center tnum">4</span></span>
+          <span class="text-[10.5px] font-semibold">현황</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-ig-500">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full bg-ig-50"><svg class="w-[22px] h-[22px]"><use href="#i-history"/></svg></span>
+          <span class="text-[10.5px] font-bold">기록</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-menu"/></svg></span>
+          <span class="text-[10.5px] font-semibold">메뉴</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<!-- ============================================================
+     FRAME 05 · 메뉴 탭 (드로어 대체)
+     ============================================================ -->
+<section class="shrink-0 w-[390px]">
+  <p class="text-white/85 text-sm font-bold mb-1">05 · 메뉴 탭 — 드로어 대체</p>
+  <p class="text-white/40 text-[12.5px] leading-relaxed mb-4">햄버거 뒤에 숨어 있던 관리 액션을 정식 화면으로. 모드 토글은 스위치로 상태 노출, 초기화는 위험 영역으로 분리.</p>
+
+  <div class="relative w-[390px] h-[844px] rounded-[46px] overflow-hidden bg-[#fdf7f9] ring-[9px] ring-[#2b1620] shadow-[0_30px_80px_-20px_rgba(225,48,108,0.3)]">
+    <div class="h-12 px-8 flex items-center justify-between text-[13px] font-semibold text-gray-800">
+      <span class="tnum">9:41</span>
+      <span class="flex items-center gap-1.5">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.3" y="5" width="3" height="6" rx="0.8"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="12.9" y="0" width="3" height="11" rx="0.8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7.2a6 6 0 0 1 8 0"/><path d="M6.5 9.8a2.6 2.6 0 0 1 3 0"/></svg>
+        <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x="0.5" y="0.5" width="19" height="11" rx="3" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="14" height="8" rx="1.6" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity="0.4"/></svg>
+      </span>
+    </div>
+
+    <div class="px-5 pt-1 pb-4">
+      <h2 class="font-jua text-[27px] leading-none ig-text-grad">메뉴</h2>
+    </div>
+
+    <!-- 사용자 카드 -->
+    <div class="mx-4 rounded-2xl bg-white border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] px-4 py-3.5 flex items-center gap-3">
+      <div class="w-11 h-11 rounded-full ig-grad text-white flex items-center justify-center font-jua text-[17px]">박</div>
+      <div class="min-w-0 flex-1">
+        <p class="text-[15px] font-bold text-gray-800">박사장</p>
+        <p class="text-[11px] text-ig-400 font-medium">오너 · 로그인됨</p>
+      </div>
+      <span class="text-[11px] font-bold text-ig-600 bg-ig-50 border border-ig-200 px-2.5 py-1 rounded-full">오너</span>
+    </div>
+
+    <!-- 품목 관리 -->
+    <p class="px-6 mt-5 mb-2 text-[11px] font-bold tracking-wider text-ig-400">품목 관리</p>
+    <div class="mx-4 rounded-2xl bg-white border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] divide-y divide-ig-50 overflow-hidden">
+      <button class="w-full h-14 flex items-center gap-3 px-4 text-left">
+        <span class="w-9 h-9 rounded-xl bg-ig-50 text-ig-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-plus"/></svg></span>
+        <span class="text-[14.5px] font-medium text-gray-800 flex-1">품목 추가</span>
+        <svg class="w-4 h-4 text-gray-300"><use href="#i-chev"/></svg>
+      </button>
+      <div class="w-full h-14 flex items-center gap-3 px-4">
+        <span class="w-9 h-9 rounded-xl bg-ig-50 text-ig-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-pencil"/></svg></span>
+        <span class="text-[14.5px] font-medium text-gray-800 flex-1">최소수량 편집</span>
+        <span class="sw"></span>
+      </div>
+      <button class="w-full h-14 flex items-center gap-3 px-4 text-left">
+        <span class="w-9 h-9 rounded-xl bg-ig-50 text-ig-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-updown"/></svg></span>
+        <span class="text-[14.5px] font-medium text-gray-800 flex-1">순서 변경</span>
+        <svg class="w-4 h-4 text-gray-300"><use href="#i-chev"/></svg>
+      </button>
+      <div class="w-full h-14 flex items-center gap-3 px-4">
+        <span class="w-9 h-9 rounded-xl bg-ig-50 text-ig-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-trash"/></svg></span>
+        <span class="text-[14.5px] font-medium text-gray-800 flex-1">삭제 모드</span>
+        <span class="sw on"></span>
+      </div>
+    </div>
+
+    <!-- 운영 (위험 영역) -->
+    <p class="px-6 mt-5 mb-2 text-[11px] font-bold tracking-wider text-red-400">운영</p>
+    <div class="mx-4 rounded-2xl bg-white border border-red-100 shadow-[0_4px_16px_rgba(239,68,68,0.06)] overflow-hidden">
+      <button class="w-full min-h-14 flex items-center gap-3 px-4 py-3 text-left">
+        <span class="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-reset"/></svg></span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-[14.5px] font-semibold text-red-500">전체 카운터 초기화</span>
+          <span class="block text-[11px] text-gray-400 mt-0.5">실행 후 15초 안에 실행취소 가능</span>
+        </span>
+        <svg class="w-4 h-4 text-red-200"><use href="#i-chev"/></svg>
+      </button>
+    </div>
+
+    <!-- 화면 -->
+    <p class="px-6 mt-5 mb-2 text-[11px] font-bold tracking-wider text-ig-400">화면</p>
+    <div class="mx-4 rounded-2xl bg-white border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] overflow-hidden">
+      <div class="w-full h-16 flex items-center gap-3 px-4">
+        <span class="w-9 h-9 rounded-xl bg-ig-50 text-ig-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-palette"/></svg></span>
+        <span class="text-[14.5px] font-medium text-gray-800 flex-1">테마</span>
+        <span class="flex gap-2">
+          <button class="w-11 h-11 rounded-full ig-grad ring-2 ring-ig-500 ring-offset-2" aria-label="핑크 테마"></button>
+          <button class="w-11 h-11 rounded-full bg-[#16162a] border border-gray-300" aria-label="다크 테마"></button>
+          <button class="w-11 h-11 rounded-full bg-[#fdf7e0] border border-amber-200" aria-label="우사기 테마"></button>
+        </span>
+      </div>
+    </div>
+
+    <!-- 계정 -->
+    <p class="px-6 mt-5 mb-2 text-[11px] font-bold tracking-wider text-ig-400">계정</p>
+    <div class="mx-4 rounded-2xl bg-white border border-ig-100 shadow-[0_4px_16px_rgba(225,48,108,0.06)] divide-y divide-ig-50 overflow-hidden">
+      <button class="w-full h-14 flex items-center gap-3 px-4 text-left">
+        <span class="w-9 h-9 rounded-xl bg-ig-50 text-ig-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-lock"/></svg></span>
+        <span class="text-[14.5px] font-medium text-gray-800 flex-1">비밀번호 변경</span>
+        <svg class="w-4 h-4 text-gray-300"><use href="#i-chev"/></svg>
+      </button>
+      <button class="w-full h-14 flex items-center gap-3 px-4 text-left">
+        <span class="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center shrink-0"><svg class="w-[18px] h-[18px]"><use href="#i-out"/></svg></span>
+        <span class="text-[14.5px] font-medium text-gray-500 flex-1">로그아웃</span>
+      </button>
+    </div>
+
+    <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-ig-100 px-2 pt-1.5 pb-6">
+      <div class="grid grid-cols-4">
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-package"/></svg></span>
+          <span class="text-[10.5px] font-semibold">재고</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="relative w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-chart"/></svg><span class="absolute -top-1 right-1.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center tnum">4</span></span>
+          <span class="text-[10.5px] font-semibold">현황</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full"><svg class="w-[22px] h-[22px]"><use href="#i-history"/></svg></span>
+          <span class="text-[10.5px] font-semibold">기록</span>
+        </button>
+        <button class="h-12 flex flex-col items-center justify-center gap-0.5 text-ig-500">
+          <span class="w-12 h-6 flex items-center justify-center rounded-full bg-ig-50"><svg class="w-[22px] h-[22px]"><use href="#i-menu"/></svg></span>
+          <span class="text-[10.5px] font-bold">메뉴</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<!-- ============================================================
+     FRAME 06 · 품목 추가 바텀시트
+     ============================================================ -->
+<section class="shrink-0 w-[390px]">
+  <p class="text-white/85 text-sm font-bold mb-1">06 · 품목 추가 — 바텀시트</p>
+  <p class="text-white/40 text-[12.5px] leading-relaxed mb-4">중앙 모달 대신 엄지 닿는 바텀시트. 헤더 + 버튼·메뉴 탭 어디서든 진입. 현재 카테고리가 기본 선택.</p>
+
+  <div class="relative w-[390px] h-[844px] rounded-[46px] overflow-hidden bg-[#fdf7f9] ring-[9px] ring-[#2b1620] shadow-[0_30px_80px_-20px_rgba(225,48,108,0.3)]">
+    <div class="h-12 px-8 flex items-center justify-between text-[13px] font-semibold text-gray-800">
+      <span class="tnum">9:41</span>
+      <span class="flex items-center gap-1.5">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.3" y="5" width="3" height="6" rx="0.8"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="12.9" y="0" width="3" height="11" rx="0.8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7.2a6 6 0 0 1 8 0"/><path d="M6.5 9.8a2.6 2.6 0 0 1 3 0"/></svg>
+        <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x="0.5" y="0.5" width="19" height="11" rx="3" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="14" height="8" rx="1.6" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity="0.4"/></svg>
+      </span>
+    </div>
+
+    <!-- 뒤 배경(재고 탭 축약) -->
+    <div class="px-5 pt-1 pb-3 flex items-start justify-between">
+      <div>
+        <h2 class="font-jua text-[27px] leading-none ig-text-grad">재고관리</h2>
+        <p class="text-[11px] text-ig-300 mt-1.5 font-medium">디저트39 신사역점 · 품목 128</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="w-11 h-11 rounded-2xl border border-ig-200 bg-white text-ig-400 flex items-center justify-center"><svg class="w-5 h-5"><use href="#i-search"/></svg></button>
+        <button class="w-11 h-11 rounded-2xl ig-grad text-white flex items-center justify-center shadow-lg shadow-ig-500/30"><svg class="w-5 h-5"><use href="#i-plus"/></svg></button>
+      </div>
+    </div>
+    <div class="flex gap-2 pl-5 overflow-hidden">
+      <span class="h-11 px-4 rounded-full bg-red-500 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0"><svg class="w-4 h-4"><use href="#i-alert"/></svg>부족 4</span>
+      <span class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">딸기파우더</span><span class="font-bold text-red-600 tnum">0</span></span>
+      <span class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">밀크베이스</span><span class="font-bold text-red-600 tnum">1</span></span>
+    </div>
+
+    <!-- 딤 오버레이 -->
+    <div class="absolute inset-0 bg-black/40"></div>
+
+    <!-- 바텀시트 -->
+    <div class="absolute bottom-0 inset-x-0 bg-white rounded-t-[28px] px-5 pt-3 pb-9 shadow-[0_-12px_48px_rgba(0,0,0,0.18)]">
+      <div class="w-10 h-1.5 rounded-full bg-gray-200 mx-auto"></div>
+      <div class="flex items-center justify-between mt-3 mb-4">
+        <h3 class="font-jua text-[21px] text-ig-700">품목 추가</h3>
+        <button class="w-11 h-11 -mr-2 rounded-full text-gray-400 flex items-center justify-center" aria-label="닫기"><svg class="w-5 h-5"><use href="#i-x"/></svg></button>
+      </div>
+
+      <p class="text-[12px] font-semibold text-ig-400 mb-2">카테고리</p>
+      <div class="flex flex-wrap gap-1.5 mb-4">
+        <button class="h-10 px-3.5 rounded-full ig-grad text-white text-[12.5px] font-bold">파우더</button>
+        <button class="h-10 px-3.5 rounded-full bg-white border border-ig-200 text-ig-600 text-[12.5px] font-medium">시럽</button>
+        <button class="h-10 px-3.5 rounded-full bg-white border border-ig-200 text-ig-600 text-[12.5px] font-medium">이외품목</button>
+        <button class="h-10 px-3.5 rounded-full bg-white border border-ig-200 text-ig-600 text-[12.5px] font-medium">베이커리</button>
+        <button class="h-10 px-3.5 rounded-full bg-white border border-ig-200 text-ig-600 text-[12.5px] font-medium">오믈렛 및 마카롱</button>
+        <button class="h-10 px-3.5 rounded-full bg-white border border-ig-200 text-ig-600 text-[12.5px] font-medium">도쿄롤</button>
+        <button class="h-10 px-3.5 rounded-full bg-white border border-ig-200 text-ig-600 text-[12.5px] font-medium">케익</button>
+      </div>
+
+      <p class="text-[12px] font-semibold text-ig-400 mb-1.5">품목명</p>
+      <div class="h-12 rounded-xl border-2 border-ig-400 ring-2 ring-ig-100 bg-white px-4 flex items-center mb-4">
+        <span class="text-[15px] text-gray-800">바닐라 파우더</span>
+        <span class="w-px h-5 bg-ig-500 ml-0.5 animate-pulse"></span>
+      </div>
+
+      <p class="text-[12px] font-semibold text-ig-400 mb-1.5">단위</p>
+      <div class="grid grid-cols-5 gap-1.5 mb-4">
+        <button class="h-14 rounded-xl ig-grad text-white flex flex-col items-center justify-center"><span class="text-[14px] font-bold">개</span><span class="text-[10px] opacity-80">낱개</span></button>
+        <button class="h-14 rounded-xl bg-white border border-gray-200 text-gray-600 flex flex-col items-center justify-center"><span class="text-[14px] font-semibold">박스</span><span class="text-[10px] text-gray-400">박스</span></button>
+        <button class="h-14 rounded-xl bg-white border border-gray-200 text-gray-600 flex flex-col items-center justify-center"><span class="text-[14px] font-semibold">봉</span><span class="text-[10px] text-gray-400">봉지</span></button>
+        <button class="h-14 rounded-xl bg-white border border-gray-200 text-gray-600 flex flex-col items-center justify-center"><span class="text-[14px] font-semibold">병</span><span class="text-[10px] text-gray-400">병</span></button>
+        <button class="h-14 rounded-xl bg-white border border-gray-200 text-gray-600 flex flex-col items-center justify-center"><span class="text-[14px] font-semibold">%</span><span class="text-[10px] text-gray-400">잔여량</span></button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div>
+          <p class="text-[12px] font-semibold text-ig-400 mb-1.5">최소 수량 (개)</p>
+          <div class="h-12 rounded-xl border border-ig-200 bg-white px-4 flex items-center"><span class="text-[15px] text-gray-800 tnum">2</span></div>
+          <p class="text-[10.5px] text-gray-400 mt-1">"절반"처럼 문자도 입력 가능</p>
+        </div>
+        <div>
+          <p class="text-[12px] font-semibold text-ig-400 mb-1.5">초기 재고 (개)</p>
+          <div class="h-12 rounded-xl border border-ig-200 bg-white px-4 flex items-center"><span class="text-[15px] text-gray-800 tnum">4</span></div>
+        </div>
+      </div>
+
+      <button class="w-full h-13 min-h-12 rounded-2xl ig-grad text-white text-[15.5px] font-bold shadow-lg shadow-ig-500/30 py-3.5">파우더에 추가</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FRAME 07 · 데스크톱 1280px — 좌측 네비 + 콘텐츠 분할
+     ============================================================ -->
+<section class="shrink-0 w-[664px]">
+  <p class="text-white/85 text-sm font-bold mb-1">07 · 데스크톱(1024px+) — 좌측 네비 + 콘텐츠 분할</p>
+  <p class="text-white/40 text-[12.5px] leading-relaxed mb-4">1280px 화면 50% 축소 프리뷰. 탭바 대신 좌측 고정 네비 — 재고/현황/기록 + 빠른 작업 전부 상시 노출.</p>
+
+  <div class="w-[664px] h-[440px] rounded-2xl overflow-hidden ring-[6px] ring-[#2b1620] shadow-[0_30px_80px_-20px_rgba(225,48,108,0.3)] bg-[#fdf7f9]">
+    <div style="width:1280px;height:832px;transform:scale(0.51);transform-origin:top left">
+
+      <div class="flex h-[832px]">
+        <!-- 사이드바 -->
+        <aside class="w-64 shrink-0 bg-white border-r border-ig-100 flex flex-col">
+          <div class="px-6 pt-7 pb-5">
+            <h2 class="font-jua text-[26px] ig-text-grad leading-none">재고관리</h2>
+            <p class="text-[12px] text-ig-300 mt-1.5 font-medium">디저트39 신사역점</p>
+          </div>
+          <nav class="px-4 space-y-1.5">
+            <button class="w-full h-12 rounded-xl ig-grad text-white flex items-center gap-3 px-4 shadow-md shadow-ig-500/25">
+              <svg class="w-5 h-5"><use href="#i-package"/></svg><span class="text-[15px] font-bold">재고</span>
+            </button>
+            <button class="w-full h-12 rounded-xl text-gray-600 hover:bg-ig-50 flex items-center gap-3 px-4">
+              <svg class="w-5 h-5"><use href="#i-chart"/></svg><span class="text-[15px] font-medium flex-1 text-left">현황</span>
+              <span class="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center tnum">4</span>
+            </button>
+            <button class="w-full h-12 rounded-xl text-gray-600 hover:bg-ig-50 flex items-center gap-3 px-4">
+              <svg class="w-5 h-5"><use href="#i-history"/></svg><span class="text-[15px] font-medium">기록</span>
+            </button>
+          </nav>
+
+          <div class="mx-6 my-5 h-px bg-ig-100"></div>
+
+          <p class="px-7 text-[11px] font-bold tracking-wider text-ig-400 mb-2.5">빠른 작업</p>
+          <div class="px-4 space-y-1.5">
+            <button class="w-full h-11 rounded-xl border-2 border-ig-500 text-ig-600 flex items-center gap-3 px-4">
+              <svg class="w-[18px] h-[18px]"><use href="#i-plus"/></svg><span class="text-[14px] font-bold">품목 추가</span>
+            </button>
+            <button class="w-full h-11 rounded-xl text-gray-600 hover:bg-ig-50 flex items-center gap-3 px-4">
+              <svg class="w-[18px] h-[18px]"><use href="#i-pencil"/></svg><span class="text-[14px] font-medium">최소수량 편집</span>
+            </button>
+            <button class="w-full h-11 rounded-xl text-gray-600 hover:bg-ig-50 flex items-center gap-3 px-4">
+              <svg class="w-[18px] h-[18px]"><use href="#i-updown"/></svg><span class="text-[14px] font-medium">순서 변경</span>
+            </button>
+            <button class="w-full h-11 rounded-xl text-gray-600 hover:bg-ig-50 flex items-center gap-3 px-4">
+              <svg class="w-[18px] h-[18px]"><use href="#i-trash"/></svg><span class="text-[14px] font-medium">삭제 모드</span>
+            </button>
+            <button class="w-full h-11 rounded-xl text-red-500 hover:bg-red-50 flex items-center gap-3 px-4">
+              <svg class="w-[18px] h-[18px]"><use href="#i-reset"/></svg><span class="text-[14px] font-semibold">전체 카운터 초기화</span>
+            </button>
+          </div>
+
+          <div class="mt-auto mx-4 mb-5 rounded-xl bg-ig-50 border border-ig-100 px-4 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full ig-grad text-white flex items-center justify-center font-jua text-[14px]">박</div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[13px] font-bold text-gray-800 truncate">박사장</p>
+              <p class="text-[11px] text-ig-400">오너</p>
+            </div>
+            <button class="w-9 h-9 rounded-lg text-gray-400 hover:bg-white flex items-center justify-center" aria-label="로그아웃"><svg class="w-[17px] h-[17px]"><use href="#i-out"/></svg></button>
+          </div>
+        </aside>
+
+        <!-- 콘텐츠 -->
+        <div class="flex-1 min-w-0 px-8 py-7">
+          <!-- 상단: 검색 + 요약 칩 -->
+          <div class="flex items-center gap-4">
+            <div class="w-72 h-11 rounded-xl border border-ig-200 bg-white px-4 flex items-center gap-2.5 text-gray-400">
+              <svg class="w-[18px] h-[18px]"><use href="#i-search"/></svg><span class="text-[14px] text-ig-300">품목 검색...</span>
+            </div>
+            <div class="flex gap-2 min-w-0 overflow-hidden">
+              <span class="h-11 px-4 rounded-full bg-red-500 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0"><svg class="w-4 h-4"><use href="#i-alert"/></svg>부족 4</span>
+              <span class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">딸기파우더</span><span class="font-bold text-red-600 tnum">0</span></span>
+              <span class="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-medium text-gray-700">밀크베이스</span><span class="font-bold text-red-600 tnum">1</span></span>
+              <span class="h-11 px-4 rounded-full bg-amber-400 text-white flex items-center text-[13px] font-bold shrink-0">주의 6</span>
+            </div>
+          </div>
+
+          <!-- 카테고리 -->
+          <div class="flex gap-2 mt-5 flex-wrap">
+            <button class="h-10 px-5 rounded-full ig-grad text-white text-[14px] font-bold shadow-md shadow-ig-500/25">파우더</button>
+            <button class="h-10 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold">시럽</button>
+            <button class="h-10 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold">이외품목</button>
+            <button class="h-10 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold">베이커리</button>
+            <button class="h-10 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold">오믈렛 및 마카롱</button>
+            <button class="h-10 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold">도쿄롤</button>
+            <button class="h-10 px-5 rounded-full bg-white border border-ig-200 text-ig-600 text-[14px] font-semibold">케익</button>
+          </div>
+
+          <!-- 테이블 -->
+          <div class="mt-5 rounded-2xl bg-white border border-ig-100 shadow-[0_4px_24px_rgba(225,48,108,0.08)] overflow-hidden">
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center px-6 py-3 bg-ig-50 text-[12px] font-bold text-ig-500 tracking-wide">
+              <span>품목</span><span class="text-center">최소</span><span class="text-center">매장</span><span class="text-center">팬트리</span><span class="text-center">사무실</span>
+            </div>
+
+            <!-- danger -->
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center relative px-6 py-2.5 border-t border-ig-50 bg-red-50/70">
+              <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-red-400"></span>
+              <div class="min-w-0"><p class="text-[15px] font-semibold text-gray-800">밀크베이스</p><p class="text-[12px] text-gray-400 mt-0.5">서울우유 1L 전용 · 봉</p></div>
+              <span class="text-center text-[14px] text-gray-400">3</span>
+              <div class="flex items-center justify-center gap-1">
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+                <span class="w-9 text-center text-[15px] font-bold tnum text-red-600">1</span>
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+              </div>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">0</span>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">2</span>
+            </div>
+
+            <!-- danger -->
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center relative px-6 py-2.5 border-t border-ig-50 bg-red-50/70">
+              <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-red-400"></span>
+              <div class="min-w-0"><p class="text-[15px] font-semibold text-gray-800">딸기파우더</p><p class="text-[12px] text-gray-400 mt-0.5">봉</p></div>
+              <span class="text-center text-[14px] text-gray-400">2</span>
+              <div class="flex items-center justify-center gap-1">
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center opacity-30"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+                <span class="w-9 text-center text-[15px] font-bold tnum text-red-600">0</span>
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+              </div>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">1</span>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">0</span>
+            </div>
+
+            <!-- warning -->
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center relative px-6 py-2.5 border-t border-ig-50 bg-amber-50/70">
+              <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-amber-400"></span>
+              <div class="min-w-0"><p class="text-[15px] font-semibold text-gray-800">초코파우더</p><p class="text-[12px] text-gray-400 mt-0.5">봉</p></div>
+              <span class="text-center text-[14px] text-gray-400">2</span>
+              <div class="flex items-center justify-center gap-1">
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+                <span class="w-9 text-center text-[15px] font-bold tnum text-amber-500">2</span>
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+              </div>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">3</span>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">1</span>
+            </div>
+
+            <!-- ok rows -->
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center relative px-6 py-2.5 border-t border-ig-50">
+              <div class="min-w-0"><p class="text-[15px] font-semibold text-gray-800">바닐라파우더</p><p class="text-[12px] text-gray-400 mt-0.5">봉</p></div>
+              <span class="text-center text-[14px] text-gray-400">2</span>
+              <div class="flex items-center justify-center gap-1">
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+                <span class="w-9 text-center text-[15px] font-bold tnum text-emerald-600">4</span>
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+              </div>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">2</span>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">3</span>
+            </div>
+
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center relative px-6 py-2.5 border-t border-ig-50">
+              <div class="min-w-0"><p class="text-[15px] font-semibold text-gray-800">말차파우더</p><p class="text-[12px] text-gray-400 mt-0.5">개</p></div>
+              <span class="text-center text-[14px] text-gray-400">절반</span>
+              <div class="flex items-center justify-center gap-1">
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+                <span class="w-9 text-center text-[15px] font-bold tnum text-emerald-600">5</span>
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+              </div>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">0</span>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">2</span>
+            </div>
+
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center relative px-6 py-2.5 border-t border-ig-50">
+              <div class="min-w-0"><p class="text-[15px] font-semibold text-gray-800">로얄밀크티</p><p class="text-[12px] text-gray-400 mt-0.5">봉</p></div>
+              <span class="text-center text-[14px] text-gray-400">3개</span>
+              <div class="flex items-center justify-center gap-1">
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+                <span class="w-9 text-center text-[15px] font-bold tnum text-emerald-600">6</span>
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+              </div>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">1</span>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">4</span>
+            </div>
+
+            <div class="grid grid-cols-[minmax(0,1fr)_110px_170px_110px_110px] items-center relative px-6 py-2.5 border-t border-ig-50">
+              <div class="min-w-0"><p class="text-[15px] font-semibold text-gray-800">흑임자파우더</p><p class="text-[12px] text-gray-400 mt-0.5">봉</p></div>
+              <span class="text-center text-[14px] text-gray-400">2</span>
+              <div class="flex items-center justify-center gap-1">
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-minus"/></svg></button>
+                <span class="w-9 text-center text-[15px] font-bold tnum text-emerald-600">3</span>
+                <button class="w-9 h-9 rounded-full bg-ig-100 text-ig-600 flex items-center justify-center"><svg class="w-4 h-4"><use href="#i-plus"/></svg></button>
+              </div>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">2</span>
+              <span class="text-center text-[14px] font-medium text-gray-500 tnum">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="px-8 pb-10 -mt-4">
+  <p class="text-white/25 text-[11.5px]">시안 B · 통합 내비 — 정적 목업. 좌우 스크롤로 프레임 6장 + 데스크톱 프리뷰 확인. 구현 시 기존 컴포넌트(ItemRow·CategoryTabs·AddItemModal) 재사용 가능 범위: 스테퍼 로직·상태 색상 규칙·로그 그룹핑 그대로, 내비 셸만 교체.</p>
+</footer>
+
+</body>
+</html>

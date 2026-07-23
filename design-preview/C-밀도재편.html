@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시안 C — 밀도 재편 | 카페 재고관리</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css" rel="stylesheet">
+<style>
+  :root{
+    --brand:#e1306c; --brand2:#c13584; --brand3:#833ab4;
+    --ink:#231a1e; --line:#f6dfe9; --bgapp:#fbf6f8;
+    --danger:#e11d48; --warn:#b45309; --warn-dot:#f59e0b; --ok:#10b981;
+  }
+  html{font-family:'SUIT Variable','SUIT',-apple-system,sans-serif;}
+  body{
+    word-break:keep-all; overflow-wrap:break-word;
+    background:
+      radial-gradient(1100px 600px at 8% -5%, rgba(225,48,108,.07), transparent 60%),
+      radial-gradient(900px 520px at 96% 12%, rgba(131,58,180,.06), transparent 55%),
+      radial-gradient(rgba(193,53,132,.055) 1px, transparent 1px) 0 0/22px 22px,
+      #f8f2f5;
+    color:var(--ink);
+  }
+  .jua{font-family:'Jua',sans-serif; font-weight:400;}
+  .gtext{background:linear-gradient(135deg,#e1306c 0%,#c13584 55%,#833ab4 110%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .gbg{background:linear-gradient(135deg,#e1306c 0%,#c13584 100%);}
+  .num{font-variant-numeric:tabular-nums;}
+
+  /* ── 폰 프레임 ─────────────────────────── */
+  .phone-shell{border-radius:56px; padding:10px; background:#26161d;
+    box-shadow:0 30px 70px -24px rgba(160,40,90,.4), 0 6px 20px rgba(0,0,0,.14);}
+  .phone{width:390px; height:844px; border-radius:46px; overflow:hidden;
+    background:var(--bgapp); position:relative;}
+  .island{position:absolute; top:12px; left:50%; transform:translateX(-50%);
+    width:118px; height:32px; border-radius:20px; background:#1b1016; z-index:60;}
+
+  /* ── 정렬 세그먼트 ─────────────────────── */
+  .seg-btn{flex:1; border-radius:12px; font-size:13px; font-weight:700; color:#a89ba3;
+    display:flex; align-items:center; justify-content:center; transition:none;}
+  .seg-btn.on{background:linear-gradient(135deg,#e1306c,#c13584); color:#fff;
+    box-shadow:0 2px 8px rgba(193,53,132,.35);}
+
+  /* ── 행 상태 ───────────────────────────── */
+  .row-d{background:linear-gradient(90deg,#fff0f3 0%,#ffffff 72%);}
+  .row-w{background:linear-gradient(90deg,#fdf6e8 0%,#ffffff 72%);}
+  .dot{width:10px; height:10px; border-radius:99px; flex-shrink:0;}
+  .dot-d{background:#f43f5e; box-shadow:0 0 0 3.5px rgba(244,63,94,.16);}
+  .dot-w{background:var(--warn-dot);}
+  .dot-o{background:transparent; border:2px solid #34d399;}
+
+  /* ── 스테퍼 ────────────────────────────── */
+  .step{width:44px; height:44px; border-radius:16px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:#fdeef4; color:var(--brand); box-shadow:inset 0 0 0 1px #f8d7e4;}
+  .step.pressed{background:linear-gradient(135deg,#e1306c,#c13584); color:#fff;
+    transform:scale(.9); box-shadow:0 0 0 5px rgba(225,48,108,.22), inset 0 2px 5px rgba(0,0,0,.22);}
+  .step.off{opacity:.32;}
+
+  .card{background:#fff; border-radius:20px; box-shadow:0 4px 24px rgba(225,48,108,.09), 0 1px 4px rgba(0,0,0,.04);}
+  .frame-cap{width:390px;}
+  .hidden-scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body class="px-6 py-10 lg:px-12">
+
+<!-- ══════════════ 시안 이름 · 핵심 변경 요약 ══════════════ -->
+<header class="max-w-[1500px] mx-auto mb-10">
+  <div class="card overflow-hidden ring-1 ring-pink-100">
+    <div class="h-1.5 gbg"></div>
+    <div class="p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center gap-6">
+      <div class="shrink-0">
+        <p class="text-[11px] font-bold tracking-[0.18em] text-pink-400 uppercase mb-1">cafe-inventory · design preview</p>
+        <h1 class="jua text-4xl gtext leading-tight">시안 C — 밀도 재편</h1>
+        <p class="text-[13px] text-gray-400 mt-2">디저트39 신사역점 · 품목 128 · 카테고리 7 · 위치 3곳 · 모바일 PWA 중심(390px)</p>
+      </div>
+      <div class="lg:border-l lg:border-pink-100 lg:pl-8 flex-1">
+        <p class="text-[12px] font-bold text-pink-500 mb-2.5">핵심 변경 3줄</p>
+        <ol class="space-y-2 text-[14px] leading-relaxed text-gray-700">
+          <li class="flex gap-2.5"><span class="jua gtext w-5 shrink-0 text-[15px]">1</span>행을 상태점 · 품목명 · 3곳 합계 3요소로 압축 — 5열 표와 가로 스크롤을 제거하고 한 화면 표시 품목을 약 2배로.</li>
+          <li class="flex gap-2.5"><span class="jua gtext w-5 shrink-0 text-[15px]">2</span>모든 조작은 행 탭 → 바텀시트로 이동 — 위치별 스테퍼 3개 · 유통기한 · 구매링크 · 최근 변경 2건을 한 곳에.</li>
+          <li class="flex gap-2.5"><span class="jua gtext w-5 shrink-0 text-[15px]">3</span>128개 탐색 3중 장치 — 상단 검색 + 정렬 토글(기본·부족·이름) + 스티키 카테고리 헤더와 우측 빠른 점프 인덱스.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════ 프레임들 ══════════════ -->
+<main class="max-w-[1500px] mx-auto flex flex-wrap items-start gap-10 justify-center xl:justify-start">
+
+  <!-- ── 프레임 1 · 목록(기본순) ── -->
+  <section class="shrink-0">
+    <div class="phone-shell"><div class="phone">
+      <div class="island"></div>
+      <div id="f1"></div>
+    </div></div>
+    <div class="frame-cap mt-5 px-1">
+      <p class="jua text-[17px] text-pink-600 mb-1.5">1 · 목록 — 기본순</p>
+      <ul class="text-[12.5px] text-gray-500 leading-relaxed space-y-1">
+        <li>행 = 상태점 · 품목명 · 합계. 부족/주의는 배경 틴트 + 숫자색 + "최소" 캡션으로 이중 구분.</li>
+        <li>상태점: 부족=채움+링, 주의=채움, 정상=테두리만 — 색약 사용자도 형태로 구분.</li>
+        <li>우측 인덱스 레일로 카테고리 즉시 점프. 행 높이 54px(터치 44px+ 충족).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── 프레임 2 · 스크롤 중(스티키+인덱스) ── -->
+  <section class="shrink-0">
+    <div class="phone-shell"><div class="phone">
+      <div class="island"></div>
+      <div id="f2"></div>
+    </div></div>
+    <div class="frame-cap mt-5 px-1">
+      <p class="jua text-[17px] text-pink-600 mb-1.5">2 · 스크롤 중 — 스티키 헤더 + 점프 인덱스</p>
+      <ul class="text-[12.5px] text-gray-500 leading-relaxed space-y-1">
+        <li>검색·정렬 바는 상단 고정, 현재 카테고리 헤더가 그 아래 붙어 위치를 항상 알림.</li>
+        <li>인덱스 스크럽 시 카테고리 라벨 버블 표시(iOS 연락처 방식). 히트 영역 44px 확보.</li>
+        <li>128개 품목도 검색 없이 3탭 안에 도달.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── 프레임 3 · 부족순 정렬 ── -->
+  <section class="shrink-0">
+    <div class="phone-shell"><div class="phone">
+      <div class="island"></div>
+      <div id="f3"></div>
+    </div></div>
+    <div class="frame-cap mt-5 px-1">
+      <p class="jua text-[17px] text-pink-600 mb-1.5">3 · 부족순 — 발주 동선</p>
+      <ul class="text-[12.5px] text-gray-500 leading-relaxed space-y-1">
+        <li>부족 → 주의 → 정상 순. 카테고리는 인라인 칩으로 대체(그룹 해제 상태).</li>
+        <li>상단 요약 칩(부족 6 · 주의 9)을 탭해도 이 화면으로 진입 — 아침 발주 체크가 10초.</li>
+        <li>정렬 토글은 고정 폭 세그먼트 — 전환 시 레이아웃 시프트 없음.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── 프레임 4 · 바텀시트 ── -->
+  <section class="shrink-0">
+    <div class="phone-shell"><div class="phone">
+      <div class="island"></div>
+      <div id="f4bg"></div>
+      <div class="absolute inset-0 z-30" style="background:rgba(35,15,25,.38)"></div>
+      <!-- 실행취소 토스트 -->
+      <div class="absolute left-1/2 -translate-x-1/2 top-[64px] z-50 flex items-center gap-3 bg-white rounded-2xl pl-4 pr-2 py-2 shadow-xl ring-1 ring-pink-100">
+        <span class="text-[12.5px] font-semibold text-gray-700 num">바닐라시럽 매장 1 → 2</span>
+        <button class="h-8 px-3 rounded-xl text-[12px] font-bold text-pink-600 bg-pink-50">실행취소</button>
+      </div>
+      <!-- 바텀시트 -->
+      <div class="absolute bottom-0 inset-x-0 z-40 bg-white rounded-t-[30px] shadow-2xl" id="sheet"></div>
+    </div></div>
+    <div class="frame-cap mt-5 px-1">
+      <p class="jua text-[17px] text-pink-600 mb-1.5">4 · 바텀시트 — 조작·정보 집약</p>
+      <ul class="text-[12.5px] text-gray-500 leading-relaxed space-y-1">
+        <li>위치별 스테퍼 3개(버튼 44px). 매장 +가 눌린 상태 — 길게 누르면 연속 증감, 즉시 토스트 + 실행취소.</li>
+        <li>숫자 탭 = 직접 입력. 사무실 0이라 − 비활성(자리 유지, 흐림 처리 — 시프트 없음).</li>
+        <li>유통기한·구매링크는 데이터 있는 품목만 노출. 최근 변경 2건으로 "누가 언제" 즉시 확인.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── 데스크톱 프리뷰(축소) ── -->
+  <section class="shrink-0">
+    <div class="rounded-[22px] overflow-hidden ring-1 ring-pink-100 shadow-2xl bg-white" style="width:648px;height:456px">
+      <div style="width:1296px;height:912px;transform:scale(.5);transform-origin:top left" id="desk"></div>
+    </div>
+    <div class="mt-5 px-1" style="width:648px">
+      <p class="jua text-[17px] text-pink-600 mb-1.5">데스크톱 — 시트가 우측 고정 패널로 (50% 축소)</p>
+      <ul class="text-[12.5px] text-gray-500 leading-relaxed space-y-1">
+        <li>3열: 카테고리 내비(부족 배지) · 품목 목록 · 상세 패널. 행 클릭 = 패널 교체, 오버레이 없음.</li>
+        <li>같은 행 컴포넌트 재사용 — 모바일과 정보 구조 동일, 배치만 재편.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════════ 인터랙션 규칙 ══════════════ -->
+<footer class="max-w-[1500px] mx-auto mt-12">
+  <div class="card ring-1 ring-pink-100 p-6 sm:p-7">
+    <p class="jua text-[16px] gtext mb-4">공통 인터랙션 규칙</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-3 text-[12.5px] text-gray-500 leading-relaxed">
+      <p><span class="font-bold text-gray-700">터치 타깃 44px+</span> — 행 54px, 스테퍼·세그먼트 44px. 요약 칩·인덱스는 시각 요소보다 큰 히트 슬롭으로 44px 확보.</p>
+      <p><span class="font-bold text-gray-700">레이아웃 시프트 금지</span> — 정렬 토글 고정 폭, 행 높이 고정, "최소" 캡션·비활성 버튼은 자리 선확보 후 표시/흐림 처리.</p>
+      <p><span class="font-bold text-gray-700">기존 동작 유지</span> — 30초 자동 갱신, 변경 토스트 + 실행취소, 로그 디바운스 병합, min_qty 문자열("2"·"3개"·"절반") 그대로 표기.</p>
+      <p><span class="font-bold text-gray-700">한국어 조판</span> — word-break: keep-all, 숫자는 tabular-nums. 시트 내 조건부 행(유통기한·구매링크)은 품목 데이터 유무로만 결정.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ────────────────────────────────────────────
+   아이콘 (lucide 스타일 인라인 SVG)
+──────────────────────────────────────────── */
+const I = (paths, cls='w-4 h-4') =>
+  `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const ic = {
+  search: c => I('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', c),
+  menu:   c => I('<path d="M4 7h16M4 12h16M4 17h16"/>', c),
+  chevR:  c => I('<path d="m9 18 6-6-6-6"/>', c),
+  chevD:  c => I('<path d="m6 9 6 6 6-6"/>', c),
+  minus:  c => I('<path d="M5 12h14"/>', c),
+  plus:   c => I('<path d="M5 12h14M12 5v14"/>', c),
+  cal:    c => I('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>', c),
+  cart:   c => I('<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>', c),
+  clock:  c => I('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>', c),
+  ext:    c => I('<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>', c),
+  x:      c => I('<path d="M18 6 6 18M6 6l12 12"/>', c),
+  pencil: c => I('<path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>', c),
+};
+
+/* ────────────────────────────────────────────
+   데이터 — 실데이터 느낌의 예시 (128개 중 발췌)
+──────────────────────────────────────────── */
+const CATS = [
+  {n:'파우더', c:21, low:1}, {n:'시럽', c:18, low:1}, {n:'이외품목', c:24, low:1},
+  {n:'베이커리', c:27, low:1}, {n:'오믈렛 및 마카롱', c:16, low:1}, {n:'도쿄롤', c:10, low:1}, {n:'케익', c:12, low:0},
+];
+// st: d=부족, w=주의, o=정상 / t=3곳 합계 표시값
+const powder = [
+  {n:'밀크베이스', t:'1', u:'개', st:'d', min:'2'},
+  {n:'초코 파우더', t:'3', u:'개', st:'o', min:'2'},
+  {n:'말차 파우더', t:'4', u:'개', st:'o', min:'2'},
+  {n:'흑임자 파우더', t:'2', u:'개', st:'w', min:'2'},
+  {n:'로얄밀크티 파우더', t:'6', u:'개', st:'o', min:'2'},
+  {n:'딸기 파우더', t:'5', u:'개', st:'o', min:'2'},
+  {n:'콩가루 파우더', t:'3', u:'개', st:'o', min:'2'},
+];
+const syrup = [
+  {n:'바닐라시럽', t:'3', u:'병', st:'o', min:'2'},
+  {n:'헤이즐넛시럽', t:'1', u:'병', st:'d', min:'2'},
+  {n:'카라멜시럽', t:'2', u:'병', st:'w', min:'2'},
+  {n:'연유', t:'20%', u:'', st:'w', min:'절반'},
+  {n:'초코소스', t:'45%', u:'', st:'o', min:'30%'},
+];
+const bakery = [
+  {n:'소금빵', t:'2', u:'개', st:'w', min:'2'},
+  {n:'쿠키슈', t:'2', u:'개', st:'d', min:'3개'},
+  {n:'플레인 크루아상', t:'4', u:'개', st:'o', min:'2'},
+  {n:'초코 크루아상', t:'3', u:'개', st:'o', min:'2'},
+  {n:'초코 청크', t:'5', u:'개', st:'o', min:'2'},
+  {n:'말차 청크', t:'4', u:'개', st:'o', min:'2'},
+  {n:'딸기 도넛', t:'2', u:'개', st:'w', min:'2'},
+  {n:'초코 도넛', t:'3', u:'개', st:'o', min:'2'},
+  {n:'깨찰빵', t:'6', u:'개', st:'o', min:'3개'},
+  {n:'플레인 베이글', t:'4', u:'개', st:'o', min:'2'},
+  {n:'어니언 베이글', t:'3', u:'개', st:'o', min:'2'},
+];
+const lowFirst = [
+  {n:'밀크베이스', t:'1', u:'개', st:'d', min:'2', cat:'파우더'},
+  {n:'헤이즐넛시럽', t:'1', u:'병', st:'d', min:'2', cat:'시럽'},
+  {n:'오트밀크', t:'2', u:'개', st:'d', min:'3개', cat:'이외품목'},
+  {n:'쿠키슈', t:'2', u:'개', st:'d', min:'3개', cat:'베이커리'},
+  {n:'바닐라 마카롱', t:'1', u:'개', st:'d', min:'2', cat:'오믈렛 및 마카롱'},
+  {n:'말차 도쿄롤', t:'1', u:'개', st:'d', min:'2', cat:'도쿄롤'},
+];
+const warnNext = [
+  {n:'흑임자 파우더', t:'2', u:'개', st:'w', min:'2', cat:'파우더'},
+  {n:'카라멜시럽', t:'2', u:'병', st:'w', min:'2', cat:'시럽'},
+  {n:'연유', t:'20%', u:'', st:'w', min:'절반', cat:'시럽'},
+  {n:'컵캐리어', t:'2', u:'개', st:'w', min:'2', cat:'이외품목'},
+  {n:'소금빵', t:'2', u:'개', st:'w', min:'2', cat:'베이커리'},
+  {n:'딸기 도넛', t:'2', u:'개', st:'w', min:'2', cat:'베이커리'},
+  {n:'티라미수 케익', t:'1', u:'개', st:'w', min:'1', cat:'케익'},
+];
+const deskSyrup = [
+  {n:'바닐라시럽', t:'4', u:'병', st:'o', min:'2', sel:true},
+  {n:'헤이즐넛시럽', t:'1', u:'병', st:'d', min:'2'},
+  {n:'카라멜시럽', t:'2', u:'병', st:'w', min:'2'},
+  {n:'바닐라빈시럽', t:'3', u:'병', st:'o', min:'2'},
+  {n:'솔티드카라멜시럽', t:'5', u:'병', st:'o', min:'2'},
+  {n:'연유', t:'20%', u:'', st:'w', min:'절반'},
+  {n:'초코소스', t:'45%', u:'', st:'o', min:'30%'},
+  {n:'딸기청', t:'3', u:'병', st:'o', min:'2'},
+  {n:'자몽청', t:'4', u:'병', st:'o', min:'2'},
+  {n:'레몬청', t:'2', u:'병', st:'o', min:'1'},
+];
+
+/* ────────────────────────────────────────────
+   행 · 헤더 템플릿
+──────────────────────────────────────────── */
+const TOTAL_CLS = {d:'text-rose-600 font-extrabold', w:'text-amber-700 font-bold', o:'text-gray-800 font-bold'};
+const CAP_CLS   = {d:'text-rose-400', w:'text-amber-500'};
+
+function row(it, {chip=false, rail=true, desk=false}={}) {
+  const cap = (it.st==='d'||it.st==='w')
+    ? `<span class="block text-[10.5px] font-semibold ${CAP_CLS[it.st]} leading-none mt-0.5">최소 ${it.min}</span>`
+    : '';
+  const catChip = chip
+    ? `<span class="shrink-0 text-[10px] font-semibold text-pink-400 bg-pink-50 rounded-full px-1.5 py-0.5">${it.cat}</span>` : '';
+  const sel = it.sel ? 'style="background:#fdeef4;box-shadow:inset 3px 0 0 #e1306c"' : '';
+  const bg = it.sel ? '' : (it.st==='d' ? 'row-d' : it.st==='w' ? 'row-w' : 'bg-white');
+  return `
+  <div class="h-[54px] px-4 ${rail?'pr-10':''} flex items-center gap-3 ${bg} border-b border-[#faeef4] ${desk?'cursor-pointer':''}" ${sel}>
+    <span class="dot dot-${it.st}"></span>
+    <span class="flex-1 min-w-0 truncate text-[15px] font-semibold text-gray-800">${it.n}</span>
+    ${catChip}
+    <span class="text-right num leading-none shrink-0">
+      <span class="text-[16px] ${TOTAL_CLS[it.st]}">${it.t}</span><span class="text-[11px] font-medium text-gray-400 ml-0.5">${it.u}</span>
+      ${cap}
+    </span>
+    <span class="text-gray-300 shrink-0">${ic.chevR('w-3.5 h-3.5')}</span>
+  </div>`;
+}
+
+function catHeader(name, count, low, {rail=true, stuck=false}={}) {
+  return `
+  <div class="h-9 px-4 ${rail?'pr-10':''} flex items-center gap-2 border-b border-[var(--line)] ${stuck?'shadow-[0_6px_14px_-8px_rgba(193,53,132,.28)]':''}"
+       style="background:rgba(251,246,248,.96)">
+    <span class="jua text-[13.5px] text-pink-600">${name}</span>
+    <span class="text-[11px] font-semibold text-pink-300 num">${count}</span>
+    ${low ? `<span class="ml-auto text-[11px] font-bold text-rose-500 num">부족 ${low}</span>` : ''}
+  </div>`;
+}
+
+function groupDivider(label, cls) {
+  return `<div class="h-8 px-4 flex items-center gap-1.5 text-[11.5px] font-bold ${cls} border-b border-[var(--line)]" style="background:rgba(251,246,248,.96)">${label}</div>`;
+}
+
+/* ────────────────────────────────────────────
+   상단 공통 (상태바 · 헤더 · 검색 · 정렬 · 요약칩)
+──────────────────────────────────────────── */
+const statusBar = `
+<div class="h-[52px] flex items-end justify-between px-9 pb-1.5 text-[13px] font-semibold text-gray-800">
+  <span class="num">9:41</span>
+  <span class="flex items-center gap-1.5">
+    ${I('<path d="M2 12.5a15 15 0 0 1 20 0M5 16a10 10 0 0 1 14 0M8.5 19.5a5 5 0 0 1 7 0"/><circle cx="12" cy="21" r="0.5" fill="currentColor"/>','w-3.5 h-3.5')}
+    <svg class="w-6 h-3" viewBox="0 0 26 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="8" rx="2" fill="currentColor"/><path d="M23.5 4.5v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity=".4"/></svg>
+  </span>
+</div>`;
+
+const appHeader = `
+<div class="px-5 pt-1 pb-3 flex items-center justify-between">
+  <div>
+    <h1 class="jua text-[27px] gtext leading-none">재고관리</h1>
+    <p class="text-[11px] text-pink-300 mt-1.5 font-medium">디저트39 신사역점</p>
+  </div>
+  <button class="w-11 h-11 rounded-2xl bg-white ring-1 ring-pink-100 flex items-center justify-center text-pink-400" aria-label="메뉴">${ic.menu('w-5 h-5')}</button>
+</div>`;
+
+function controls({sort='기본순', shadow=false, focus=false}={}) {
+  const segs = ['기본순','부족순','이름순'].map(s =>
+    `<button class="seg-btn ${s===sort?'on':''}">${s}</button>`).join('');
+  return `
+  <div class="px-4 pb-3 space-y-2 ${shadow?'shadow-[0_10px_18px_-12px_rgba(193,53,132,.3)] relative z-20 bg-[var(--bgapp)]':''}">
+    <label class="h-11 flex items-center gap-2.5 bg-white rounded-2xl px-4 ${focus?'ring-2 ring-pink-300':'ring-1 ring-pink-100'}">
+      <span class="text-pink-300">${ic.search('w-[18px] h-[18px]')}</span>
+      <span class="text-[14px] ${focus?'text-gray-700':'text-pink-200'} flex-1">품목 검색</span>
+    </label>
+    <div class="flex items-center gap-2">
+      <div class="flex-1 h-11 bg-white rounded-2xl ring-1 ring-pink-100 p-1 flex">${segs}</div>
+      <button class="h-11 px-3 rounded-2xl bg-rose-50 ring-1 ring-rose-100 flex items-center gap-1.5 shrink-0">
+        <span class="dot dot-d" style="width:8px;height:8px"></span>
+        <span class="text-[12px] font-bold text-rose-600 num">부족 6</span>
+      </button>
+      <button class="h-11 px-3 rounded-2xl bg-amber-50 ring-1 ring-amber-100 flex items-center gap-1.5 shrink-0">
+        <span class="dot dot-w" style="width:8px;height:8px"></span>
+        <span class="text-[12px] font-bold text-amber-700 num">주의 9</span>
+      </button>
+    </div>
+  </div>`;
+}
+
+function indexRail(active) {
+  const items = ['파','시','이','베','오','도','케'].map(ch => {
+    const on = ch===active;
+    return `<span class="w-7 h-8 rounded-full flex items-center justify-center text-[11px] font-bold ${on?'gbg text-white shadow-md':'text-gray-400'}">${ch}</span>`;
+  }).join('');
+  return `
+  <div class="absolute right-1.5 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-0.5 rounded-full px-0.5 py-1.5"
+       style="background:rgba(255,255,255,.88);backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(193,53,132,.16);border:1px solid #f8dfe9">
+    ${items}
+  </div>`;
+}
+
+/* ────────────────────────────────────────────
+   바텀시트 / 상세 패널
+──────────────────────────────────────────── */
+function stepperRow(loc, sub, val, {plusPressed=false, minusOff=false, plusOff=false}={}) {
+  return `
+  <div class="flex items-center h-[60px] gap-3">
+    <div class="w-[78px] shrink-0">
+      <p class="text-[14px] font-bold text-gray-700 leading-none">${loc}</p>
+      <p class="text-[10.5px] text-gray-400 mt-1">${sub}</p>
+    </div>
+    <div class="flex-1"></div>
+    <button class="step ${minusOff?'off':''}" aria-label="감소">${ic.minus('w-5 h-5')}</button>
+    <button class="w-14 h-11 text-center text-[24px] font-extrabold text-gray-800 num leading-none" style="text-decoration:underline dotted #f3b9cf 2px;text-underline-offset:5px">${val}</button>
+    <button class="step ${plusPressed?'pressed':''} ${plusOff?'off':''}" aria-label="증가">${ic.plus('w-5 h-5')}</button>
+  </div>`;
+}
+
+function detailBody(desk=false) {
+  return `
+  ${desk?'':'<div class="w-10 h-1.5 rounded-full bg-pink-100 mx-auto mt-3"></div>'}
+  <div class="px-6 ${desk?'pt-6':'pt-4'} pb-3 flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <div class="flex items-center gap-2 flex-wrap">
+        <h2 class="jua text-[22px] text-gray-800 leading-tight">바닐라시럽</h2>
+        <span class="text-[10.5px] font-semibold text-pink-400 bg-pink-50 rounded-full px-2 py-0.5">시럽</span>
+        <span class="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 ring-1 ring-emerald-100 rounded-full px-2 py-0.5">정상</span>
+      </div>
+      <p class="text-[12px] text-gray-400 mt-1.5 num">합계 <b class="text-gray-700">4병</b> · 최소 2 · 위치 3곳</p>
+    </div>
+    <button class="w-11 h-11 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0" aria-label="닫기">${ic.x('w-[18px] h-[18px]')}</button>
+  </div>
+
+  <div class="px-6 divide-y divide-[#faeef4]">
+    ${stepperRow('매장','카운터','2',{plusPressed:true})}
+    ${stepperRow('팬트리','창고','2')}
+    ${stepperRow('사무실','예비','0',{minusOff:true})}
+  </div>
+
+  <div class="px-6 pt-3 pb-1 space-y-2">
+    <div class="h-11 flex items-center gap-2.5 rounded-2xl bg-[#fbf6f8] px-3.5">
+      <span class="text-pink-400">${ic.cal('w-4 h-4')}</span>
+      <span class="text-[12.5px] font-semibold text-gray-600">유통기한</span>
+      <span class="text-[12.5px] text-gray-700 num ml-1">2026-09-14</span>
+      <span class="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 rounded-full px-1.5 py-0.5 num">D-53</span>
+      <span class="ml-auto text-gray-300">${ic.pencil('w-3.5 h-3.5')}</span>
+    </div>
+    <button class="w-full h-11 rounded-2xl ring-1 ring-pink-200 bg-white flex items-center justify-center gap-2 text-[13px] font-bold text-pink-600">
+      ${ic.cart('w-4 h-4')} 구매처 열기 · 최저가 비교 ${ic.ext('w-3.5 h-3.5')}
+    </button>
+  </div>
+
+  <div class="px-6 pt-3 ${desk?'pb-6':'pb-8'}">
+    <div class="flex items-center justify-between mb-1.5">
+      <p class="text-[11.5px] font-bold text-gray-400">최근 변경</p>
+      <button class="h-8 px-2 text-[11.5px] font-semibold text-pink-500 flex items-center">전체 이력 ${ic.chevR('w-3 h-3')}</button>
+    </div>
+    <div class="space-y-1.5">
+      <div class="flex items-center gap-2 text-[12px] text-gray-500 num">
+        <span class="text-gray-300">${ic.clock('w-3.5 h-3.5')}</span>
+        <span class="font-semibold text-pink-500 bg-pink-50 rounded-full px-1.5 py-0.5 text-[10.5px]">매장</span>
+        1 → 2 <b class="text-emerald-600">+1</b><span class="text-gray-300">·</span>매니저<span class="text-gray-300">·</span>방금 전
+      </div>
+      <div class="flex items-center gap-2 text-[12px] text-gray-500 num">
+        <span class="text-gray-300">${ic.clock('w-3.5 h-3.5')}</span>
+        <span class="font-semibold text-blue-500 bg-blue-50 rounded-full px-1.5 py-0.5 text-[10.5px]">팬트리</span>
+        3 → 2 <b class="text-rose-500">-1</b><span class="text-gray-300">·</span>오너<span class="text-gray-300">·</span>어제 18:40
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ────────────────────────────────────────────
+   프레임 조립
+──────────────────────────────────────────── */
+// 프레임 1 — 목록(기본순, 최상단)
+document.getElementById('f1').innerHTML = `
+  ${statusBar}${appHeader}${controls()}
+  <div class="relative">
+    ${indexRail('파')}
+    ${catHeader('파우더',21,1)}
+    ${powder.map(it=>row(it)).join('')}
+    ${catHeader('시럽',18,1)}
+    ${syrup.slice(0,3).map(it=>row(it)).join('')}
+  </div>`;
+
+// 프레임 2 — 스크롤 중 (스티키 헤더 + 인덱스 점프)
+document.getElementById('f2').innerHTML = `
+  ${statusBar}${controls({shadow:true})}
+  <div class="relative">
+    ${indexRail('베')}
+    <div class="absolute right-12 top-[297px] z-40 flex items-center">
+      <span class="jua text-[15px] text-white gbg rounded-2xl px-3.5 py-2 shadow-lg">베이커리</span>
+      <span class="w-2 h-2 gbg rotate-45 -ml-1 rounded-[2px]"></span>
+    </div>
+    ${catHeader('베이커리',27,1,{stuck:true})}
+    ${bakery.map(it=>row(it)).join('')}
+  </div>`;
+
+// 프레임 3 — 부족순
+document.getElementById('f3').innerHTML = `
+  ${statusBar}${appHeader}${controls({sort:'부족순'})}
+  <div class="relative">
+    ${groupDivider(`<span class="dot dot-d" style="width:8px;height:8px"></span> 부족 6`,'text-rose-500')}
+    ${lowFirst.map(it=>row(it,{chip:true,rail:false})).join('')}
+    ${groupDivider(`<span class="dot dot-w" style="width:8px;height:8px"></span> 주의 9`,'text-amber-600')}
+    ${warnNext.slice(0,4).map(it=>row(it,{chip:true,rail:false})).join('')}
+    <div class="h-11 flex items-center justify-center gap-1.5 text-[12px] font-semibold text-gray-400">
+      정상 113개 — 이름순으로 계속 ${ic.chevD('w-3.5 h-3.5')}
+    </div>
+  </div>`;
+
+// 프레임 4 — 바텀시트 배경 + 시트
+document.getElementById('f4bg').innerHTML = `
+  ${statusBar}${appHeader}${controls()}
+  <div class="relative">
+    ${indexRail('시')}
+    ${catHeader('시럽',18,1)}
+    ${[{n:'바닐라시럽',t:'4',u:'병',st:'o',min:'2'},...syrup.slice(1)].map(it=>row(it)).join('')}
+    ${catHeader('이외품목',24,1)}
+  </div>`;
+document.getElementById('sheet').innerHTML = detailBody(false);
+
+// 데스크톱 — 3열 마스터/디테일
+document.getElementById('desk').innerHTML = `
+<div class="h-full flex flex-col bg-[#f8f2f5]">
+  <div class="h-[76px] px-8 flex items-center gap-6 bg-white border-b border-[var(--line)]">
+    <div class="shrink-0">
+      <h1 class="jua text-[24px] gtext leading-none">재고관리</h1>
+      <p class="text-[10.5px] text-pink-300 mt-1 font-medium">디저트39 신사역점</p>
+    </div>
+    <label class="h-11 w-[360px] flex items-center gap-2.5 bg-[#fbf6f8] rounded-2xl px-4 ring-1 ring-pink-100">
+      <span class="text-pink-300">${ic.search('w-[18px] h-[18px]')}</span>
+      <span class="text-[14px] text-pink-200">품목 검색</span>
+    </label>
+    <div class="w-[280px] h-11 bg-[#fbf6f8] rounded-2xl ring-1 ring-pink-100 p-1 flex">
+      <button class="seg-btn on">기본순</button><button class="seg-btn">부족순</button><button class="seg-btn">이름순</button>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <span class="h-9 px-3 rounded-full bg-rose-50 ring-1 ring-rose-100 text-[12px] font-bold text-rose-600 flex items-center num">부족 6</span>
+      <span class="h-9 px-3 rounded-full bg-amber-50 ring-1 ring-amber-100 text-[12px] font-bold text-amber-700 flex items-center num">주의 9</span>
+      <span class="h-11 px-4 rounded-2xl bg-white ring-1 ring-pink-100 text-[13px] font-bold text-gray-600 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full gbg text-white text-[11px] flex items-center justify-center jua">오</span>오너
+      </span>
+    </div>
+  </div>
+  <div class="flex-1 flex min-h-0">
+    <aside class="w-[250px] shrink-0 border-r border-[var(--line)] bg-white py-4 px-3">
+      <p class="text-[10.5px] font-bold tracking-widest text-pink-300 uppercase px-3 mb-2">카테고리</p>
+      ${CATS.map((c,i)=>`
+        <div class="h-11 px-3 rounded-xl flex items-center gap-2 ${i===1?'gbg text-white shadow-md':'text-gray-600'} mb-0.5 cursor-pointer">
+          <span class="text-[13.5px] font-bold flex-1 truncate">${c.n}</span>
+          ${c.low?`<span class="text-[10px] font-bold ${i===1?'bg-white/25 text-white':'bg-rose-50 text-rose-500'} rounded-full px-1.5 py-0.5 num">${c.low}</span>`:''}
+          <span class="text-[11.5px] ${i===1?'text-white/70':'text-gray-300'} num">${c.c}</span>
+        </div>`).join('')}
+      <div class="mt-4 mx-1 rounded-2xl bg-[#fbf6f8] ring-1 ring-pink-100 p-4">
+        <p class="text-[11px] font-bold text-gray-400 mb-2">오늘 현황</p>
+        <p class="text-[12.5px] text-gray-600 leading-relaxed num">변경 <b class="text-pink-600">37건</b> · 0 도달 <b class="text-rose-500">2건</b><br>마지막 초기화 오전 8:02</p>
+      </div>
+    </aside>
+    <div class="flex-1 min-w-0 overflow-hidden bg-white">
+      ${catHeader('시럽',18,1,{rail:false})}
+      ${deskSyrup.map(it=>row(it,{rail:false,desk:true})).join('')}
+    </div>
+    <aside class="w-[420px] shrink-0 border-l border-[var(--line)] bg-white overflow-hidden">
+      ${detailBody(true)}
+    </aside>
+  </div>
+</div>`;
+</script>
+</body>
+</html>

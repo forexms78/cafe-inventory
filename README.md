@@ -14,6 +14,7 @@
 
 | 버전 | 날짜 | 내용 |
 |------|------|------|
+| v2.10 | 2026-07-23 | UI 개편(시안 B 통합네비) — 하단 탭바 4탭(재고·현황·기록·메뉴, 부족 배지), 드로어 폐지·메뉴 탭 승격, 부족·주의 요약 스트립, 44px 스테퍼·행 레이아웃 재편, 실행취소 토스트 탭바 위 고정, 현황·기록 화면 정리 |
 | v2.9 | 2026-07-23 | URL 단축 — 워커명 cafe-inventory → 39 변경(구 워커 삭제), 서브도메인 변경과 함께 39.<서브도메인>.workers.dev 체계로 |
 | v2.8 | 2026-07-23 | DB 이관 — Supabase(PostgreSQL)를 Cloudflare D1(SQLite)로 전환(품목 128·로그 3,437·계정 3건 무손실 이관), supabase-js 제거, 라이브 URL cafe-inventory.bhpark-dev.workers.dev |
 | v2.7 | 2026-07-23 | 인프라 이전 — Vercel 종료로 Cloudflare Workers 배포 전환(OpenNext 어댑터, Next 16.2.11 업그레이드), 대시보드 정적 박제 버그 수정 |

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Jua, Noto_Sans_KR } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import BottomTabBar from "@/components/BottomTabBar";
 import "./globals.css";
 
 const jua = Jua({
@@ -57,9 +58,20 @@ export default function RootLayout({
         {/* 우사기 테마 배경 워터마크 — CSS로 우사기일 때만 표시 */}
         <div className="usagi-watermark -z-10" aria-hidden="true" />
         <ThemeProvider>
-          {children}
+          {/* 탭바 가림 방지: 모바일=하단 패딩(safe-area 포함), 데스크톱(lg+)=좌측 레일 폭만큼 패딩 */}
+          <div className="flex-1 flex flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-20">
+            {children}
+          </div>
+          <BottomTabBar />
         </ThemeProvider>
-        <Toaster position="top-center" richColors closeButton />
+        {/* 토스트는 탭바 바로 위 고정 슬롯 — safe-area 포함 오프셋으로 탭바를 가리지 않음 */}
+        <Toaster
+          position="bottom-center"
+          offset={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+          mobileOffset={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+          richColors
+          closeButton
+        />
       </body>
     </html>
   );

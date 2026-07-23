@@ -1,10 +1,11 @@
 'use client';
+import { Heart, Moon } from 'lucide-react';
 import { useTheme, Theme } from './ThemeProvider';
 
-const THEMES: { id: Theme; icon: string; label: string; img?: string }[] = [
-  { id: 'pink', icon: '💗', label: '핑크' },
-  { id: 'dark', icon: '🌙', label: '다크' },
-  { id: 'usagi', icon: '🐰', label: '우사기', img: '/themes/usagi-main.webp' },
+const THEMES: { id: Theme; Icon?: typeof Heart; label: string; img?: string }[] = [
+  { id: 'pink', Icon: Heart, label: '핑크' },
+  { id: 'dark', Icon: Moon, label: '다크' },
+  { id: 'usagi', label: '우사기', img: '/themes/usagi-main.webp' },
 ];
 
 export default function ThemeButton() {
@@ -27,9 +28,9 @@ export default function ThemeButton() {
           {t.img ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={t.img} alt="" className="w-5 h-5 rounded-md object-contain bg-white" />
-          ) : (
-            t.icon
-          )}
+          ) : t.Icon ? (
+            <t.Icon className="w-4 h-4 text-pink-500" />
+          ) : null}
         </button>
       ))}
     </div>
