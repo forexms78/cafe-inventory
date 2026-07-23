@@ -55,15 +55,18 @@ export default function BottomTabBar() {
               key={href}
               href={href}
               aria-current={active ? 'page' : undefined}
-              className={`h-14 flex flex-col items-center justify-center gap-0.5 lg:h-16 transition-colors ${
-                active ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'
+              className={`relative h-14 flex flex-col items-center justify-center gap-0.5 lg:h-16 transition-colors ${
+                active ? 'text-gray-800' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              <span
-                className={`relative w-12 h-6 flex items-center justify-center rounded-full ${
-                  active ? 'bg-pink-100' : ''
-                }`}
-              >
+              {/* 활성 마커 — absolute 브랜드 바(3px), 레이아웃 시프트 없음 */}
+              {active && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-[var(--brand)] lg:left-0 lg:top-1/2 lg:-translate-y-1/2 lg:translate-x-0 lg:w-[3px] lg:h-6"
+                />
+              )}
+              <span className="relative w-12 h-6 flex items-center justify-center">
                 <Icon className="w-[22px] h-[22px]" />
                 {href === '/dashboard' && lowCount !== null && lowCount > 0 && (
                   <span className="absolute -top-1 right-1.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Jua, Noto_Sans_KR } from "next/font/google";
+import { IBM_Plex_Sans_KR, Jua } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import BottomTabBar from "@/components/BottomTabBar";
@@ -11,16 +11,16 @@ const jua = Jua({
   weight: "400",
 });
 
-const notoSansKR = Noto_Sans_KR({
-  variable: "--font-noto",
+// 본문 폰트 — V-C 프로덕티브. 500(medium)은 400으로 폴백되므로 3웨이트만 로드
+const plexSansKR = IBM_Plex_Sans_KR({
+  variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
 });
 
 export const metadata: Metadata = {
   title: '재고 관리',
   description: '디저트39 신사역점 재고관리',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -37,13 +37,13 @@ export default function RootLayout({
     <html
       lang="ko"
       suppressHydrationWarning
-      className={`${jua.variable} ${notoSansKR.variable} h-full antialiased`}
+      className={`${jua.variable} ${plexSansKR.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-pink-50/30" style={{ fontFamily: 'var(--font-noto), sans-serif' }}>
+      <body className="min-h-full flex flex-col">
         {/* 테마 선적용 — 첫 페인트 전에 data-theme 설정으로 색 깜빡임(FOUC) 방지 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('cafe-theme');var v=(t==='dark'||t==='usagi')?t:'pink';var d=document.documentElement;d.setAttribute('data-theme',v);d.classList.toggle('dark',v==='dark');}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('cafe-theme');var v=(t==='pink'||t==='bakery'||t==='dark'||t==='usagi')?t:'default';var d=document.documentElement;d.setAttribute('data-theme',v);d.classList.toggle('dark',v==='dark');}catch(e){}})();`,
           }}
         />
         <div

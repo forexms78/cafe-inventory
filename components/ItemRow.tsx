@@ -28,9 +28,10 @@ export interface ItemRowRef {
   focusStock: () => void;
 }
 
+// V-C: 행 배경은 항상 화이트 — 상태는 좌측 바 + 수치 색으로만 (스캔 소음 제거)
 const ROW_COLORS = {
-  danger: 'bg-red-50',
-  warning: 'bg-yellow-50',
+  danger: 'bg-white',
+  warning: 'bg-white',
   ok: 'bg-white',
 };
 
@@ -160,7 +161,7 @@ const StockCell = forwardRef<StockCellRef, {
         onTouchEnd={stopLongPress}
         disabled={value <= 0}
         aria-label="감소"
-        className="w-11 h-11 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center shrink-0 select-none"
+        className="w-11 h-11 rounded-xl bg-white border-[1.5px] border-gray-200 text-gray-800 hover:bg-pink-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center shrink-0 select-none"
       >
         <Minus className="w-4 h-4" />
       </button>
@@ -183,7 +184,7 @@ const StockCell = forwardRef<StockCellRef, {
         onTouchEnd={stopLongPress}
         disabled={value >= maxVal}
         aria-label="증가"
-        className="w-11 h-11 rounded-full bg-pink-100 text-pink-600 hover:bg-pink-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center shrink-0 select-none"
+        className="w-11 h-11 rounded-xl bg-white border-[1.5px] border-gray-200 text-gray-800 hover:bg-pink-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center shrink-0 select-none"
       >
         <Plus className="w-4 h-4" />
       </button>
@@ -261,7 +262,7 @@ const ItemRow = forwardRef<ItemRowRef, Props>(function ItemRow(
       className={`relative flex items-center gap-1 pl-3 pr-7 py-0.5 min-h-[54px] ${ROW_COLORS[status]} transition-all hover:brightness-95 ${highlighted ? 'ring-2 ring-inset ring-pink-400 animate-pulse' : ''}`}
     >
       {status !== 'ok' && (
-        <span aria-hidden="true" className={`absolute left-0 top-2 bottom-2 w-1 rounded-r ${BAR_COLORS[status]}`} />
+        <span aria-hidden="true" className={`absolute left-0 top-2 bottom-2 w-[3px] rounded-r ${BAR_COLORS[status]}`} />
       )}
       {reorderMode && (
         <span

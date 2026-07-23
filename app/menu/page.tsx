@@ -72,22 +72,26 @@ export default function MenuPage() {
 
   return (
     <main className="max-w-lg mx-auto px-4 py-6 w-full">
-      <h1
-        className="text-2xl font-bold text-pink-700 theme-title mb-5"
-        style={{ fontFamily: 'var(--font-jua)' }}
-      >
-        메뉴
-      </h1>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-2xl font-bold tracking-tight text-pink-700 theme-title theme-jua">
+          메뉴
+        </h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/dessert39-logo.svg"
+          alt="DESSERT39"
+          width={270}
+          height={73}
+          className="brand-logo h-6 w-auto"
+        />
+      </div>
 
       {/* 사용자 카드 */}
       {!ready ? (
         <div className="bg-white rounded-2xl border border-pink-100 shadow-sm h-[74px] animate-pulse" />
       ) : user ? (
         <div className="bg-white rounded-2xl border border-pink-100 shadow-sm px-4 py-3.5 flex items-center gap-3">
-          <div
-            className="w-11 h-11 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center text-lg shrink-0"
-            style={{ fontFamily: 'var(--font-jua)' }}
-          >
+          <div className="w-11 h-11 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center text-lg font-bold shrink-0 theme-jua">
             {user.name[0]}
           </div>
           <div className="min-w-0 flex-1">
@@ -97,6 +101,14 @@ export default function MenuPage() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100 shadow-sm px-4 py-3.5 flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/dessert39-character.png"
+            alt=""
+            width={357}
+            height={560}
+            className="w-11 h-11 rounded-xl bg-[#fff] border border-pink-100 object-contain shrink-0"
+          />
           <p className="text-sm text-gray-400 flex-1 min-w-0">
             로그인하면 관리 기능을 사용할 수 있어요
           </p>

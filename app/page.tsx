@@ -555,10 +555,17 @@ export default function Home() {
             />
           )}
           <div>
-            <h1 className="text-4xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
-              재고관리
+            <h1>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/dessert39-logo.svg"
+                alt="DESSERT39 재고관리"
+                width={270}
+                height={73}
+                className="brand-logo h-7 w-auto"
+              />
             </h1>
-            <p className="text-xs text-pink-300 mt-1">디저트39 신사역점</p>
+            <p className="text-xs text-pink-300 mt-1">재고관리 · 신사역점</p>
           </div>
           {(user?.role === 'owner' || user?.role === 'developer') && (
             <button
@@ -643,7 +650,7 @@ export default function Home() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             {/* 리스트 헤더 — 행과 동일한 폭 배열 */}
-            <div className="flex items-center gap-1 pl-3 pr-7 py-2 bg-pink-50/70 border-b border-pink-100 text-[11px] font-bold text-pink-500 tracking-wide">
+            <div className="flex items-center gap-1 pl-3 pr-7 py-2 bg-pink-50/70 border-b border-pink-100 text-[11px] font-bold text-gray-400 tracking-wide">
               {reorderMode && <span className="w-7 shrink-0" />}
               <span className="flex-1 min-w-0 pl-1">품목</span>
               <span className="w-[132px] shrink-0 text-center">매장</span>
@@ -719,7 +726,7 @@ export default function Home() {
             >
               <span
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors ${
-                  activeCategory === cat ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400'
+                  activeCategory === cat ? 'bg-[var(--brand)] text-white' : 'text-gray-400'
                 }`}
               >
                 {cat[0]}

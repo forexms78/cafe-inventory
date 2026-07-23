@@ -13,9 +13,9 @@ export default function CategoryTabs({ active, onChange }: Props) {
         <button
           key={cat}
           onClick={() => onChange(cat)}
-          className={`px-4 py-2 rounded-full text-base font-semibold transition-all duration-200 ${
+          className={`px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 ${
             active === cat
-              ? 'bg-pink-500 text-white shadow-sm shadow-pink-200'
+              ? 'bg-pink-500 text-white'
               : 'bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-200'
           }`}
         >

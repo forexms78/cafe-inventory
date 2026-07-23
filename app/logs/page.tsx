@@ -199,7 +199,7 @@ export default function LogsPage() {
     <main className="max-w-4xl mx-auto px-4 py-6 w-full">
       {/* 헤더 — 탭바가 페이지 이동을 담당하므로 뒤로가기 버튼 없음 */}
       <div className="flex items-end justify-between mb-6">
-        <h1 className="text-2xl font-bold text-pink-700 theme-title" style={{ fontFamily: 'var(--font-jua)' }}>
+        <h1 className="text-2xl font-bold tracking-tight text-pink-700 theme-title theme-jua">
           기록
         </h1>
         <span className="text-xs text-gray-400 bg-pink-50 px-2.5 py-1 rounded-full">
@@ -242,7 +242,7 @@ export default function LogsPage() {
             <button
               key={o.key}
               onClick={() => setDateRange(o.key)}
-              className={`h-9 px-3.5 shrink-0 text-xs rounded-full border transition-colors ${
+              className={`h-9 px-3.5 shrink-0 text-xs rounded-lg border transition-colors ${
                 dateRange === o.key
                   ? 'bg-pink-500 text-white border-pink-500 font-bold'
                   : 'bg-white text-gray-500 border-gray-200 hover:border-pink-300 font-medium'
@@ -256,7 +256,7 @@ export default function LogsPage() {
             <button
               key={o.key}
               onClick={() => setFieldFilter(o.key)}
-              className={`h-9 px-3.5 shrink-0 text-xs rounded-full border transition-colors ${
+              className={`h-9 px-3.5 shrink-0 text-xs rounded-lg border transition-colors ${
                 fieldFilter === o.key
                   ? 'bg-pink-500 text-white border-pink-500 font-bold'
                   : 'bg-white text-gray-500 border-gray-200 hover:border-pink-300 font-medium'
@@ -271,14 +271,14 @@ export default function LogsPage() {
           <select
             value={userFilter}
             onChange={e => setUserFilter(e.target.value)}
-            className="h-9 text-xs border border-gray-200 rounded-full px-3 text-gray-600 focus:outline-none focus:ring-1 focus:ring-pink-300 bg-white"
+            className="h-9 text-xs border border-gray-200 rounded-lg px-3 text-gray-600 focus:outline-none focus:ring-1 focus:ring-pink-300 bg-white"
           >
             <option value="all">전체 사용자</option>
             {users.map(u => <option key={u} value={u}>{u}</option>)}
           </select>
           <button
             onClick={() => setAnomalyOnly(v => !v)}
-            className={`h-9 px-3.5 text-xs font-medium rounded-full border transition-colors ${
+            className={`h-9 px-3.5 text-xs font-medium rounded-lg border transition-colors ${
               anomalyOnly
                 ? 'bg-red-500 text-white border-red-500'
                 : 'bg-white text-gray-500 border-gray-200 hover:border-red-300'
@@ -303,7 +303,7 @@ export default function LogsPage() {
             <button
               onClick={() => setSelectedItem(null)}
               aria-label="타임라인 닫기"
-              className="w-11 h-11 -mr-2 flex items-center justify-center rounded-full hover:bg-pink-100 text-pink-400 transition-colors shrink-0"
+              className="w-11 h-11 -mr-2 flex items-center justify-center rounded-lg hover:bg-pink-100 text-pink-400 transition-colors shrink-0"
             >
               <X className="w-5 h-5" />
             </button>
@@ -378,7 +378,7 @@ export default function LogsPage() {
                               onClick={() => handleDeleteLog(log.id)}
                               aria-label="로그 삭제"
                               title="로그 삭제"
-                              className="w-9 h-9 -mr-1.5 flex items-center justify-center rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
+                              className="w-9 h-9 -mr-1.5 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -431,7 +431,7 @@ export default function LogsPage() {
                             onClick={() => handleDeleteLog(log.id)}
                             aria-label="로그 삭제"
                             title="로그 삭제"
-                            className="w-9 h-9 -mr-1.5 flex items-center justify-center rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors self-center shrink-0"
+                            className="w-9 h-9 -mr-1.5 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors self-center shrink-0"
                           >
                             <X className="w-4 h-4" />
                           </button>

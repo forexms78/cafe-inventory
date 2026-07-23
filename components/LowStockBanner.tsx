@@ -19,9 +19,9 @@ export default function LowStockBanner({ items, loading, onSelect }: Props) {
     <div className="h-11 mb-4">
       {loading ? (
         <div className="flex gap-2 overflow-hidden" aria-hidden="true">
-          <span className="h-11 w-24 rounded-full bg-pink-100 animate-pulse shrink-0" />
-          <span className="h-11 w-32 rounded-full bg-pink-100 animate-pulse shrink-0" />
-          <span className="h-11 w-28 rounded-full bg-pink-100 animate-pulse shrink-0" />
+          <span className="h-11 w-24 rounded-xl bg-pink-100 animate-pulse shrink-0" />
+          <span className="h-11 w-32 rounded-xl bg-pink-100 animate-pulse shrink-0" />
+          <span className="h-11 w-28 rounded-xl bg-pink-100 animate-pulse shrink-0" />
         </div>
       ) : danger.length === 0 && warning.length === 0 ? (
         <p className="h-11 flex items-center gap-1.5 text-sm font-medium text-emerald-600">
@@ -30,39 +30,36 @@ export default function LowStockBanner({ items, loading, onSelect }: Props) {
         </p>
       ) : (
         <div className="flex gap-2 h-11 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {danger.length > 0 && (
-            <span className="h-11 px-4 rounded-full bg-red-500 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0 whitespace-nowrap">
-              <TriangleAlert className="w-4 h-4 shrink-0" />
-              부족 {danger.length}
-            </span>
-          )}
+          {/* V-C 카운트 칩 — 잉크 채움 */}
+          <span className="h-11 px-4 rounded-xl bg-gray-800 text-white flex items-center gap-1.5 text-[13px] font-bold shrink-0 whitespace-nowrap">
+            <TriangleAlert className="w-4 h-4 shrink-0" />
+            {[
+              danger.length > 0 && `부족 ${danger.length}`,
+              warning.length > 0 && `주의 ${warning.length}`,
+            ].filter(Boolean).join(' · ')}
+          </span>
           {danger.map(item => (
             <button
               key={item.id}
               onClick={() => onSelect(item)}
               aria-label={`${item.name} 재고 ${totalStock(item)} — 품목으로 이동`}
-              className="h-11 px-3.5 rounded-full bg-white border border-red-200 flex items-center gap-2 text-[13px] shrink-0 whitespace-nowrap hover:brightness-95 transition-all"
+              className="h-11 px-3.5 rounded-xl bg-red-50 flex items-center gap-2 text-[13px] shrink-0 whitespace-nowrap hover:brightness-95 transition-all"
             >
-              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-              <span className="font-medium text-gray-700">{item.name}</span>
+              <span className="w-1.5 h-1.5 rounded-[2px] bg-red-400 shrink-0" />
+              <span className="font-semibold text-red-600">{item.name}</span>
               <span className="font-bold text-red-600 tabular-nums">{totalStock(item)}</span>
             </button>
           ))}
-          {warning.length > 0 && (
-            <span className="h-11 px-4 rounded-full bg-yellow-400 text-yellow-900 flex items-center text-[13px] font-bold shrink-0 whitespace-nowrap">
-              주의 {warning.length}
-            </span>
-          )}
           {warning.map(item => (
             <button
               key={item.id}
               onClick={() => onSelect(item)}
               aria-label={`${item.name} 재고 ${totalStock(item)} — 품목으로 이동`}
-              className="h-11 px-3.5 rounded-full bg-white border border-yellow-200 flex items-center gap-2 text-[13px] shrink-0 whitespace-nowrap hover:brightness-95 transition-all"
+              className="h-11 px-3.5 rounded-xl bg-yellow-50 flex items-center gap-2 text-[13px] shrink-0 whitespace-nowrap hover:brightness-95 transition-all"
             >
-              <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
-              <span className="font-medium text-gray-700">{item.name}</span>
-              <span className="font-semibold text-yellow-600 tabular-nums">{totalStock(item)}</span>
+              <span className="w-1.5 h-1.5 rounded-[2px] bg-yellow-400 shrink-0" />
+              <span className="font-semibold text-yellow-600">{item.name}</span>
+              <span className="font-bold text-yellow-600 tabular-nums">{totalStock(item)}</span>
             </button>
           ))}
         </div>

@@ -72,7 +72,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -81,6 +81,27 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* ---- V-C 프로덕티브 토큰 (기본 스킨) ----
+     테마 오버라이드는 이 토큰 치환만으로 성립한다. */
+  --bg: #ffffff;
+  --bg-sub: #f4f5f7;
+  --ink: #101215;
+  --ink-soft: #3a3f47;
+  --ink-muted: #69707b;
+  --ink-faint: #9aa1ab;
+  --line: #e7e9ed;
+  --line-strong: #d2d6dc;
+  --brand: #e8336e; /* 핑크 — 로고·활성 마커 한정 */
+  --danger: #d02318; /* 4.9:1 on --danger-bg (AA) — usagi 폴백 포함 */
+  --danger-bar: #f04438;
+  --danger-bg: #fef3f2;
+  --warn: #b54708;
+  --warn-bar: #f79009;
+  --warn-bg: #fffaeb;
+  --ok: #067647;
+  --ok-bar: #12b76a;
+  --ok-bg: #ecfdf3;
 }
 
 .dark {
@@ -126,6 +147,8 @@
     /* 한국어 줄바꿈: 단어 단위 유지 + 넘칠 때만 강제 줄바꿈 (시안 B 규칙) */
     word-break: keep-all;
     overflow-wrap: break-word;
+    /* 수치 우선 도구 — 자릿수가 변해도 폭 고정 (V-C tnum) */
+    font-variant-numeric: tabular-nums;
   }
   html {
     @apply font-sans;
@@ -133,38 +156,106 @@
 }
 
 /* ============================================================
-   THEME: INSTAGRAM PINK  (data-theme="pink") — 기본 테마
-   흰 배경 + 비비드 핑크/로즈 그라디언트
+   THEME: V-C 프로덕티브  (기본 스킨, data-theme="default"/미지정)
+   화이트 베이스 + 잉크 강대비 — 상태색(레드/앰버/그린)이 주인공,
+   핑크(--brand)는 로고·활성 마커에만.
+   기존 컴포넌트의 pink/gray 유틸리티를 토큰으로 재매핑한다 —
+   dark/usagi 블록은 속성 선택자라 특이성이 높아 그대로 우선한다.
    ============================================================ */
 
-html[data-theme="pink"] body,
-:root body {
-  background-color: #fafafa;
+body {
+  background-color: var(--bg);
+  color: var(--ink);
 }
 
-/* 타이틀 그라디언트 */
-html[data-theme="pink"] .theme-title {
-  background: linear-gradient(135deg, #e1306c 0%, #c13584 50%, #833ab4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* 기본·핑크·베이커리 스킨은 배경 패턴 제거 — dark/usagi만 기존 유지 */
+body > div[style*="bg-pattern"] {
+  display: none;
+}
+html[data-theme="dark"] body > div[style*="bg-pattern"],
+html[data-theme="usagi"] body > div[style*="bg-pattern"] {
+  display: block;
 }
 
-/* 활성 카테고리 탭 그라디언트 */
-html[data-theme="pink"] .bg-pink-500 {
-  background: linear-gradient(135deg, #e1306c 0%, #c13584 100%);
-  box-shadow: 0 2px 8px rgba(193, 53, 132, 0.35);
+/* Jua는 pink/dark/usagi 헤딩 폰트 — 기본은 IBM Plex Sans KR */
+html[data-theme="pink"] .theme-jua,
+html[data-theme="dark"] .theme-jua,
+html[data-theme="usagi"] .theme-jua {
+  font-family: var(--font-jua);
 }
 
-/* 카드 그림자 강화 */
-html[data-theme="pink"] .shadow-sm {
-  box-shadow: 0 4px 24px rgba(225, 48, 108, 0.1), 0 1px 4px rgba(0, 0, 0, 0.05);
-}
+/* --- 표면 --- */
+.bg-pink-50,
+.bg-pink-50\/50,
+.bg-pink-50\/70,
+.bg-pink-100,
+.bg-gray-50,
+.bg-gray-100 { background-color: var(--bg-sub); }
+.bg-pink-500,
+.bg-gray-800 { background-color: var(--ink); }
+.hover\:bg-pink-600:hover { background-color: var(--ink-soft); }
+.hover\:bg-pink-50:hover,
+.active\:bg-pink-100:active { background-color: var(--bg-sub); }
+.hover\:bg-pink-100:hover,
+.hover\:bg-pink-200:hover { background-color: var(--line); }
 
-/* 테이블 헤더 */
-html[data-theme="pink"] .bg-pink-50\/70 {
-  background-color: #fff0f7;
-}
+/* --- 보더 --- */
+.border-pink-50,
+.border-pink-100,
+.border-pink-200,
+.border-gray-100 { border-color: var(--line); }
+.border-pink-300,
+.border-pink-400,
+.border-gray-200 { border-color: var(--line-strong); }
+.border-pink-500 { border-color: var(--ink); }
+.hover\:border-pink-200:hover,
+.hover\:border-pink-300:hover { border-color: var(--line-strong); }
+.divide-pink-50 > :not([hidden]) ~ :not([hidden]) { border-color: var(--line); }
+
+/* --- 잉크 스케일 --- */
+.text-pink-700, .text-gray-900, .text-gray-800 { color: var(--ink); }
+.text-pink-600, .text-gray-700, .text-gray-600 { color: var(--ink-soft); }
+.text-pink-400, .text-pink-300, .text-gray-500, .text-gray-400 { color: var(--ink-muted); }
+.text-pink-200, .text-gray-300 { color: var(--ink-faint); }
+.text-pink-100 { color: rgba(255, 255, 255, 0.72); } /* 잉크 채움 버튼 위 보조 텍스트 */
+.hover\:text-pink-400:hover,
+.hover\:text-pink-500:hover,
+.hover\:text-pink-600:hover { color: var(--ink); }
+.placeholder-pink-200::placeholder { color: var(--ink-faint); }
+
+/* --- 브랜드 핑크 — 로고·활성 마커·점프 하이라이트 한정 --- */
+.text-pink-500 { color: var(--brand); }
+.ring-pink-400 { --tw-ring-color: var(--brand); }
+.ring-pink-300 { --tw-ring-color: var(--line-strong); }
+.focus\:ring-pink-300:focus,
+.focus\:ring-pink-400:focus { --tw-ring-color: color-mix(in srgb, var(--ink) 35%, transparent); }
+.focus\:border-pink-400:focus { border-color: var(--ink); }
+
+/* --- 상태색: 부족 danger --- */
+.text-red-700, .text-red-600, .text-red-500 { color: var(--danger); }
+.text-red-400 { color: var(--danger-bar); }
+.hover\:text-red-400:hover, .hover\:text-red-600:hover { color: var(--danger); }
+.bg-red-50, .bg-red-50\/40, .bg-red-100 { background-color: var(--danger-bg); }
+.hover\:bg-red-50:hover,
+.hover\:bg-red-100\/60:hover,
+.hover\:bg-red-200:hover { background-color: color-mix(in srgb, var(--danger-bg) 88%, var(--danger-bar)); }
+.bg-red-400 { background-color: var(--danger-bar); }
+.bg-red-500 { background-color: var(--danger); }
+.border-red-200, .border-red-300 { border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+.hover\:border-red-300:hover { border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+.border-red-500 { border-color: var(--danger); }
+
+/* --- 상태색: 주의 warning --- */
+.text-yellow-900, .text-yellow-700, .text-yellow-600 { color: var(--warn); }
+.bg-yellow-50, .bg-yellow-50\/40, .bg-yellow-100 { background-color: var(--warn-bg); }
+.hover\:bg-yellow-100\/60:hover { background-color: color-mix(in srgb, var(--warn-bg) 88%, var(--warn-bar)); }
+.bg-yellow-400 { background-color: var(--warn-bar); }
+.border-yellow-200 { border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+
+/* --- 상태색: 정상 ok --- */
+.text-emerald-600, .text-emerald-500 { color: var(--ok); }
+.bg-emerald-50 { background-color: var(--ok-bg); }
+.border-emerald-200 { border-color: color-mix(in srgb, var(--ok) 30%, transparent); }
 
 /* ============================================================
    THEME: DARK  (data-theme="dark")
@@ -198,8 +289,23 @@ html[data-theme="dark"] .bg-pink-100 {
   background-color: #252550;
 }
 
-html[data-theme="dark"] .bg-gray-100 {
+html[data-theme="dark"] .bg-gray-100,
+html[data-theme="dark"] .bg-gray-50 {
   background-color: #252550;
+}
+
+/* 메뉴 행 프레스 상태 — 기본 스킨 토큰(--bg-sub) 관통 방지 */
+html[data-theme="dark"] .active\:bg-pink-100:active {
+  background-color: #2e2e5e;
+}
+
+/* 주요 버튼 호버·보더 — 기본 스킨의 잉크 토큰 대신 핑크 유지 */
+html[data-theme="dark"] .hover\:bg-pink-600:hover {
+  background-color: #be185d;
+}
+
+html[data-theme="dark"] .border-pink-500 {
+  border-color: #db2777;
 }
 
 /* 행 상태 색상 */
@@ -307,6 +413,11 @@ html[data-theme="dark"] .shadow-2xl {
   box-shadow: -4px 0 32px rgba(0, 0, 0, 0.6);
 }
 
+/* === 브랜드 로고 — 고정 잉크(#2c2a29) SVG라 다크에선 반전 === */
+html[data-theme="dark"] .brand-logo {
+  filter: invert(1);
+}
+
 /* === 메뉴 버튼 (햄버거) === */
 html[data-theme="dark"] .bg-pink-400 {
   background-color: #f472b6;
@@ -317,11 +428,26 @@ html[data-theme="dark"] .bg-pink-500 {
   background-color: #db2777;
 }
 
-/* === 위험/경고 텍스트는 유지 === */
+/* === 상태색 — 다크에서 명도 상향 (V-C DARK READY 스와치) === */
+html[data-theme="dark"] .text-red-700,
 html[data-theme="dark"] .text-red-600,
+html[data-theme="dark"] .text-red-500,
+html[data-theme="dark"] .text-red-400 {
+  color: #f97066;
+}
+
 html[data-theme="dark"] .text-yellow-600,
+html[data-theme="dark"] .text-yellow-700 {
+  color: #fdb022;
+}
+
 html[data-theme="dark"] .text-emerald-600 {
-  /* 상태 색상은 유지 */
+  color: #32d583;
+}
+
+/* 요약 스트립 카운트 칩(잉크 채움) — 다크에서는 서피스 톤 */
+html[data-theme="dark"] .bg-gray-800 {
+  background-color: #252550;
 }
 
 html[data-theme="dark"] .bg-red-100 {
@@ -468,6 +594,9 @@ html[data-theme="usagi"] .bg-pink-50 { background-color: #fdf5e3; }
 html[data-theme="usagi"] .bg-pink-50\/50 { background-color: #fdf5e3; }
 html[data-theme="usagi"] .bg-pink-100 { background-color: #fbe4ec; }
 html[data-theme="usagi"] .bg-gray-100 { background-color: #f3ecdc; }
+html[data-theme="usagi"] .bg-gray-50 { background-color: #f6efdf; }
+html[data-theme="usagi"] .active\:bg-pink-100:active { background-color: #f7e6ee; }
+html[data-theme="usagi"] .border-pink-500 { border-color: #e06b94; }
 
 /* 배지/포인트 — 볼 핑크 */
 html[data-theme="usagi"] .bg-pink-200 { background-color: #f7cdda; }
@@ -529,6 +658,90 @@ html[data-theme="usagi"] .bg-yellow-50 { background-color: #fbf4e0; }
 html[data-theme="usagi"] .bg-red-50\/40 { background-color: rgba(253, 238, 240, 0.7); }
 html[data-theme="usagi"] .bg-yellow-50\/40 { background-color: rgba(251, 244, 224, 0.7); }
 html[data-theme="usagi"] .bg-red-50\/50 { background-color: rgba(253, 238, 240, 0.8); }
+
+/* ============================================================
+   THEME: PINK  (data-theme="pink") — V-A 핑크 리파인
+   크림·블러시 레이어드 배경 + 화이트 카드, 로즈는 액션·활성 한정.
+   기본 스킨 토큰 치환이 중심 — 구 기본('pink' 저장) 사용자 대상.
+   ============================================================ */
+
+html[data-theme="pink"] {
+  --bg: #faf6f1;          /* 크림 베이스 */
+  --bg-sub: #f8e9ee;      /* 블러시 레이어 */
+  --ink: #2f2327;         /* 웜 차콜 */
+  --ink-soft: #55434a;
+  --ink-muted: #907e85;
+  --ink-faint: #c6b6bc;
+  --line: #f0e3e3;        /* 보더 1규칙 */
+  --line-strong: #e2cdd2;
+  --brand: #c93a6b;       /* 브랜드 로즈 — 액션 전용 */
+  --danger: #c33a33; /* 4.7:1 on --danger-bg (AA) */
+  --danger-bar: #e0655e;
+  --danger-bg: #fceeec;
+  --warn: #96620e; /* 4.7:1 on --warn-bg (AA) */
+  --warn-bar: #dca84e;
+  --warn-bg: #fbf2de;
+  --ok: #27784f; /* 4.8:1 on --ok-bg (AA) */
+  --ok-bar: #57a87e;
+  --ok-bg: #e9f4ec;
+}
+
+/* 크림 베이스 + 상단 블러시 라디얼 2겹 레이어드 */
+html[data-theme="pink"] body {
+  background:
+    radial-gradient(110% 46% at 50% 0%, #f8e9ee 0%, rgba(248, 233, 238, 0) 62%),
+    var(--bg);
+}
+
+/* 잉크 채움 액션(주요 버튼·활성 탭)을 로즈로 — V-A 핑크 사용처 한정 원칙 */
+html[data-theme="pink"] .bg-pink-500 { background-color: var(--brand); }
+html[data-theme="pink"] .hover\:bg-pink-600:hover { background-color: #a82d57; }
+html[data-theme="pink"] .border-pink-500 { border-color: var(--brand); }
+html[data-theme="pink"] .focus\:border-pink-400:focus { border-color: var(--brand); }
+html[data-theme="pink"] .focus\:ring-pink-300:focus,
+html[data-theme="pink"] .focus\:ring-pink-400:focus {
+  --tw-ring-color: color-mix(in srgb, var(--brand) 35%, transparent);
+}
+
+/* ============================================================
+   THEME: BAKERY  (data-theme="bakery") — V-B 베이커리 웜
+   오트밀·버터크림 표면 + 초콜릿 잉크,
+   상태색 테라코타(부족)/앰버(주의)/세이지(정상), 베리는 포인트만.
+   ============================================================ */
+
+html[data-theme="bakery"] {
+  --bg: #f4ede1;          /* 오트밀 */
+  --bg-sub: #faf5ea;      /* 페이퍼 — 리스트 헤더·섹션 */
+  --ink: #3b2c20;         /* 초콜릿 */
+  --ink-soft: #52402f;
+  --ink-muted: #6b5847;
+  --ink-faint: #a08d77;
+  --line: #e6d9c3;
+  --line-strong: #d3c2a4;
+  --brand: #c34a73;       /* 딸기 잼 베리 — 로고·활성 마커 */
+  --danger: #a44523;      /* 테라코타 — 5.0:1 on --danger-bg (AA) */
+  --danger-bar: #c65b36;
+  --danger-bg: #f7e5d9;
+  --warn: #85630c;        /* 앰버 — 4.7:1 on --warn-bg (AA) */
+  --warn-bar: #c79a2e;
+  --warn-bg: #f5ebce;
+  --ok: #556b49;          /* 세이지 — 4.9:1 on --ok-bg (AA) */
+  --ok-bar: #7d9370;
+  --ok-bg: #e9eedc;
+}
+
+/* 카드 서피스 — 웜 화이트 */
+html[data-theme="bakery"] .bg-white { background-color: #fffcf5; }
+
+/* 아이콘 타일·활성 배경 — 버터크림 토널 */
+html[data-theme="bakery"] .bg-pink-100 { background-color: #efe2cb; }
+html[data-theme="bakery"] .hover\:bg-pink-100:hover,
+html[data-theme="bakery"] .hover\:bg-pink-200:hover { background-color: #efe2cb; }
+
+/* 헤딩 — 시스템 세리프 스택 (세리프 웹폰트 추가 로드 없음 — 페이로드 절약) */
+html[data-theme="bakery"] .theme-jua {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
 
 /* 가로 스크롤 칩 레일 — 스크롤바 숨김 (시안 B no-sb) */
 .no-sb::-webkit-scrollbar { display: none; }

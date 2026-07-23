@@ -1,9 +1,11 @@
 'use client';
-import { Heart, Moon } from 'lucide-react';
+import { Croissant, Heart, Moon, Sparkles } from 'lucide-react';
 import { useTheme, Theme } from './ThemeProvider';
 
 const THEMES: { id: Theme; Icon?: typeof Heart; label: string; img?: string }[] = [
+  { id: 'default', Icon: Sparkles, label: '기본' },
   { id: 'pink', Icon: Heart, label: '핑크' },
+  { id: 'bakery', Icon: Croissant, label: '베이커리' },
   { id: 'dark', Icon: Moon, label: '다크' },
   { id: 'usagi', label: '우사기', img: '/themes/usagi-main.webp' },
 ];
